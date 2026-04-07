@@ -143,12 +143,12 @@
 
 ## Fase 5 — Edição e Auditoria
 
-- [ ] 5.1 API route `PATCH /api/time-entries/[id]` — aceita timestamp_server, note, reason (obrigatório); só employer
-- [ ] 5.2 Trigger Postgres `AFTER UPDATE ON time_entries` para audit automático em `time_entry_audit`
-- [ ] 5.3 Modal de edição no histórico: valor atual (readonly), novo valor (time picker), campo reason obrigatório
-- [ ] 5.4 API route `GET /api/time-entries/[id]/audit` — histórico de audit da entry
-- [ ] 5.5 Viewer de audit: seção expansível ou popover mostrando quem alterou, quando, valor anterior/novo, motivo
-- [ ] 5.6 Criação manual de entry para punches esquecidos (employer): POST com timestamp explícito + audit "manual entry"
+- [x] 5.1 API route `PATCH /api/time-entries/[id]` — employer-only, reason obrigatório, verifica mês fechado
+- [x] 5.2 Trigger Postgres `AFTER UPDATE` (migration) + audit insert via API (dupla garantia)
+- [x] 5.3 EditEntryDialog: horário atual (readonly), novo (time picker), observação, motivo obrigatório
+- [x] 5.4 API route `GET /api/time-entries/[id]/audit` — com nome do autor da alteração
+- [x] 5.5 AuditLog component: inline expansível na tabela, badge de campo, valor anterior→novo, motivo
+- [x] 5.6 API POST `/api/time-entries/manual` + AddManualEntryDialog: tipo, data, hora, motivo obrigatório
 
 **Entregável:** Employer corrige entradas com trail completo de auditoria.
 
