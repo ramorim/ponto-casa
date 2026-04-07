@@ -129,13 +129,13 @@
 
 ## Fase 4 — Histórico
 
-- [ ] 4.1 API route `GET /api/time-entries/month?month=YYYY-MM` — entries do mês agrupadas por dia
-- [ ] 4.2 Tela histórico (`src/app/(authenticated)/historico/page.tsx`) — seletor de mês + tabela (Data, Entrada, Almoço, Retorno, Saída)
-- [ ] 4.3 Formatação por dia: HH:mm em timezone São Paulo, destaque para dias incompletos
-- [ ] 4.4 Tratamento de fins de semana: cinza, mostrar se houver entries
-- [ ] 4.5 Coluna "Total" com horas trabalhadas no dia
-- [ ] 4.6 Design responsivo: scroll horizontal ou layout card em telas estreitas
-- [ ] 4.7 Employer: dropdown para selecionar employee
+- [x] 4.1 API route `GET /api/time-entries/month?month=YYYY-MM&employee_id=` — entries do mês, employer pode ver funcionários
+- [x] 4.2 Tela histórico (`src/app/(authenticated)/historico/page.tsx`) — seletor de mês (setas) + tabela
+- [x] 4.3 Formatação por dia: HH:mm São Paulo, borda âmbar para dias incompletos
+- [x] 4.4 Fins de semana: cinza/opacidade, oculta no mobile se sem entries
+- [x] 4.5 Coluna "Total": calcula horas trabalhadas descontando almoço
+- [x] 4.6 Responsivo: tabela no desktop, cards no mobile (grid 4 colunas)
+- [x] 4.7 Empregador: dropdown para selecionar funcionário
 
 **Entregável:** Histórico mensal navegável com totais diários.
 
