@@ -7,18 +7,18 @@
 
 ## Fase 1 — Scaffolding e Infraestrutura
 
-- [ ] 1.1 Inicializar projeto Next.js com App Router, TypeScript, Tailwind, diretório `src/`
-- [ ] 1.2 Instalar e configurar shadcn/ui (init, tema padrão, `components.json`)
-- [ ] 1.3 Configurar PWA (`next-pwa` ou `@serwist/next`): manifest.json, ícones, service worker, meta tags iOS
-- [ ] 1.4 Criar projeto Supabase (via CLI `supabase init` + dashboard): anotar URL + anon key + service role key
-- [ ] 1.5 Instalar `@supabase/supabase-js` e `@supabase/ssr`
-- [ ] 1.6 Configurar `.env.local` com variáveis do Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-- [ ] 1.7 Criar utilitários Supabase: `src/lib/supabase/client.ts`, `server.ts`, `middleware.ts`
-- [ ] 1.8 Criar `src/middleware.ts` para auth (redirecionar não-autenticados para `/login`)
-- [ ] 1.9 Layout shell: `src/app/layout.tsx` com viewport meta, PWA meta, globals Tailwind
+- [x] 1.1 Inicializar projeto Next.js com App Router, TypeScript, Tailwind, diretório `src/`
+- [x] 1.2 Instalar e configurar shadcn/ui (init, tema padrão, `components.json`)
+- [x] 1.3 Configurar PWA (`@serwist/next`): manifest.json, ícones, service worker, meta tags iOS
+- [x] 1.4 Criar projeto Supabase (via CLI `supabase init`)
+- [x] 1.5 Instalar `@supabase/supabase-js` e `@supabase/ssr`
+- [x] 1.6 Configurar `.env.local` com variáveis do Supabase + Z-API
+- [x] 1.7 Criar utilitários Supabase: `src/lib/supabase/client.ts`, `server.ts`, `middleware.ts`, `admin.ts`
+- [x] 1.8 Criar `src/middleware.ts` para auth (redirecionar não-autenticados para `/login`)
+- [x] 1.9 Layout shell: `src/app/layout.tsx` com viewport meta, PWA meta, globals Tailwind, Providers
 - [ ] 1.10 Verificar instalabilidade PWA em dispositivo mobile
 - [ ] 1.11 Configurar ESLint + Prettier + git hooks (husky/lint-staged)
-- [ ] 1.12 Inicializar repositório git + `.gitignore`
+- [x] 1.12 Repositório git já existia + `.gitignore` atualizado
 
 **Entregável:** App shell vazio, instalável como PWA, Supabase conectado.
 
@@ -28,44 +28,44 @@
 
 ### 2A — Migrations
 
-- [ ] 2.1 Migration: tabela `profiles` (id referenciando auth.users, name, phone, role CHECK('employer','employee'), employer_id referenciando profiles, is_active, onboarding_completed, created_at, updated_at)
-- [ ] 2.2 Migration: tabela `user_devices` (id, user_id, device_id UUID, device_name, device_type, browser, last_active_at, created_at; UNIQUE user_id+device_id) — padrão app-mercado
-- [ ] 2.3 Migration: tabela `employer_invites` (id, employer_id, token UUID único, invited_phone, invited_email, status CHECK('pending','accepted','expired','revoked'), created_at, expires_at)
-- [ ] 2.4 Migration: tabela `connection_requests` (id, employee_id, employer_id, status CHECK('pending','accepted','rejected'), message, created_at, updated_at)
-- [ ] 2.5 Migration: tabela `work_schedules` (id, employee_id, start_time, lunch_start, lunch_end, end_time, valid_from, valid_until, created_at)
-- [ ] 2.6 Migration: tabela `time_entries` (id, employee_id, event_type CHECK('entrada','saida_almoco','volta_almoco','saida'), timestamp_server TIMESTAMPTZ, latitude, longitude, device_info, note, created_at)
-- [ ] 2.7 Migration: tabela `time_entry_audit` (id, entry_id, field_changed, previous_value, new_value, changed_by UUID, reason, changed_at)
-- [ ] 2.8 Migration: tabela `monthly_closings` (id, employee_id, month_ref, total_hours, overtime_hours, delay_minutes, absence_days, notes, employee_accepted, accepted_at, accepted_by, created_by, UNIQUE employee_id+month_ref, created_at)
-- [ ] 2.9 Trigger `on_auth_user_created` → cria registro em `profiles` automaticamente (com dados do metadata)
-- [ ] 2.10 Índices: (employee_id, timestamp_server) em time_entries; (employer_id) em profiles; (token) em employer_invites
+- [x] 2.1 Migration: tabela `profiles` (id referenciando auth.users, name, phone, role, employer_id, is_active, onboarding_completed, created_at, updated_at)
+- [x] 2.2 Migration: tabela `user_devices` (id, user_id, device_id UUID, device_name, device_type, browser, last_active_at, created_at; UNIQUE user_id+device_id)
+- [x] 2.3 Migration: tabela `employer_invites` (id, employer_id, token UUID, invited_phone, invited_email, status, created_at, expires_at)
+- [x] 2.4 Migration: tabela `connection_requests` (id, employee_id, employer_id, status, message, created_at, updated_at)
+- [x] 2.5 Migration: tabela `work_schedules` (id, employee_id, start_time, lunch_start, lunch_end, end_time, valid_from, valid_until, created_at)
+- [x] 2.6 Migration: tabela `time_entries` (id, employee_id, event_type CHECK, timestamp_server TIMESTAMPTZ, latitude, longitude, device_info, note, created_at)
+- [x] 2.7 Migration: tabela `time_entry_audit` (id, entry_id, field_changed, previous_value, new_value, changed_by UUID, reason, changed_at) + trigger automático
+- [x] 2.8 Migration: tabela `monthly_closings` (id, employee_id, month_ref, totais, aceite, UNIQUE employee_id+month_ref)
+- [x] 2.9 Trigger `on_auth_user_created` → cria registro em `profiles` automaticamente
+- [x] 2.10 Índices: todos criados na migration inicial
 
 ### 2B — RLS Policies
 
-- [ ] 2.11 RLS: `profiles` — usuário lê/edita próprio perfil; employer lê perfis dos seus employees
-- [ ] 2.12 RLS: `user_devices` — usuário só vê/gerencia seus próprios dispositivos
-- [ ] 2.13 RLS: `employer_invites` — employer CRUD próprios convites; qualquer autenticado pode SELECT por token
-- [ ] 2.14 RLS: `connection_requests` — employee cria request; employer do request pode SELECT/UPDATE status
-- [ ] 2.15 RLS: `time_entries` — employee INSERT/SELECT próprio; employer SELECT/UPDATE dos seus employees; sem DELETE
-- [ ] 2.16 RLS: `time_entry_audit` — SELECT para quem pode ver a entry; INSERT via trigger; sem UPDATE/DELETE
-- [ ] 2.17 RLS: `monthly_closings` — employer INSERT/UPDATE dos seus employees; employee SELECT + UPDATE aceite do próprio
-- [ ] 2.18 RLS: `work_schedules` — employer CRUD dos seus employees; employee SELECT próprio
+- [x] 2.11 RLS: `profiles` — usuário lê/edita próprio perfil; employer lê perfis dos seus employees
+- [x] 2.12 RLS: `user_devices` — usuário só vê/gerencia seus próprios dispositivos
+- [x] 2.13 RLS: `employer_invites` — employer CRUD próprios convites; qualquer autenticado pode SELECT por token
+- [x] 2.14 RLS: `connection_requests` — employee cria request; employer do request pode SELECT/UPDATE status
+- [x] 2.15 RLS: `time_entries` — employee INSERT/SELECT próprio; employer SELECT/UPDATE dos seus employees; sem DELETE
+- [x] 2.16 RLS: `time_entry_audit` — SELECT para quem pode ver a entry; INSERT via trigger; sem UPDATE/DELETE
+- [x] 2.17 RLS: `monthly_closings` — employer INSERT/UPDATE dos seus employees; employee SELECT + UPDATE aceite do próprio
+- [x] 2.18 RLS: `work_schedules` — employer CRUD dos seus employees; employee SELECT próprio
 
 ### 2C — Auth OTP Custom (Z-API WhatsApp + Email)
 
-- [ ] 2.19 Migration: tabela `otp_codes` (id, phone_or_email, code_hash, type CHECK('whatsapp','email'), expires_at, verified BOOLEAN DEFAULT FALSE, attempts INTEGER DEFAULT 0, created_at)
-- [ ] 2.20 API route `POST /api/auth/send-otp` — gera código 6 dígitos, hash com bcrypt, salva em `otp_codes` (expira em 5 min), envia via Z-API (WhatsApp) ou email (Resend/Supabase SMTP). Rate limit: max 3 envios por phone/email a cada 10 min
-- [ ] 2.21 Integração Z-API: service `src/lib/zapi.ts` — chamada REST para enviar mensagem WhatsApp com o código OTP. Variáveis env: `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_API_URL`
-- [ ] 2.22 API route `POST /api/auth/verify-otp` — valida código (compara hash, checa expiração, max 5 tentativas), se válido: busca/cria usuário no Supabase Auth (via admin SDK com `signUp`/`signInWithPassword` usando email=`{phone}@pontocasa.app` + senha gerada), retorna sessão
-- [ ] 2.23 Fallback: se Z-API falhar, oferecer envio por email (Supabase built-in email OTP ou Resend)
-- [ ] 2.24 Tela de login (`src/app/login/page.tsx`) — campo phone com máscara BR (+55), toggle para email, botão "Enviar código"
-- [ ] 2.25 Tela de verificação OTP (`src/app/login/verify/page.tsx`) — input 6 dígitos com auto-focus, countdown para reenvio, feedback de erro
-- [ ] 2.26 Hook `useAuth()` em `src/hooks/useAuth.tsx` — user, profile, isAuthenticated, sendOtp(), verifyOtp(), signOut(); listener `onAuthStateChange` que chama `registerDevice()` (padrão app-mercado)
+- [x] 2.19 Migration: tabela `otp_codes` (incluída na migration inicial)
+- [x] 2.20 API route `POST /api/auth/send-otp` — gera código, hash SHA-256, salva, envia via Z-API ou email, rate limit 3/10min
+- [x] 2.21 Integração Z-API: `src/lib/zapi.ts` + `src/lib/otp.ts` (geração, hash, verificação)
+- [x] 2.22 API route `POST /api/auth/verify-otp` — valida código, cria/autentica user via admin SDK, retorna magic link token
+- [x] 2.23 Fallback: Z-API error retorna 502 com mensagem "Tente por email"
+- [x] 2.24 Tela de login (`src/app/login/page.tsx`) — phone mask BR, toggle WhatsApp/email
+- [x] 2.25 Tela de verificação OTP (`src/app/login/verify/page.tsx`) — 6 dígitos, auto-focus, paste, countdown, Suspense
+- [x] 2.26 Hook `useAuth()` em `src/hooks/useAuth.tsx` — completo com AuthProvider, onAuthStateChange, registerDevice
 
 ### 2D — Gestão de Dispositivos
 
-- [ ] 2.24 Service `src/services/devices.ts` — `registerDevice()`, `updateLastActive()`, `removeDevice()`, `getUserDevices()`, `isCurrentDevice()`; device_id persistido em localStorage (padrão app-mercado: gera UUID na primeira visita)
-- [ ] 2.25 Detecção de device: parsear userAgent para device_name (iPhone, Android, Mac, Windows), device_type (mobile/tablet/desktop), browser (Chrome, Safari, Firefox)
-- [ ] 2.26 Auto-registro de dispositivo no login (chamado via `onAuthStateChange` em SIGNED_IN e TOKEN_REFRESHED)
+- [x] 2.24 Service `src/services/devices.ts` — registerDevice, updateLastActive, removeDevice, getUserDevices, isCurrentDevice, getCurrentDeviceId
+- [x] 2.25 Detecção de device: userAgent → device_name, device_type, browser
+- [x] 2.26 Auto-registro de dispositivo no login (via onAuthStateChange em useAuth)
 - [ ] 2.27 Atualizar `last_active_at` periodicamente (em cada navegação ou a cada N minutos)
 
 ### 2E — Seed e Tipos
@@ -81,29 +81,29 @@
 
 ### Onboarding
 
-- [ ] 2.5.1 Tela de onboarding (`src/app/onboarding/page.tsx`) — exibida após primeiro login se `onboarding_completed = false`
-- [ ] 2.5.2 Step 1: Completar nome (se não veio do auth metadata)
-- [ ] 2.5.3 Step 2: Selecionar role — "Sou Empregador(a)" ou "Sou Empregado(a)" — botões grandes com ícones
-- [ ] 2.5.4 Step 3 (employer): Tela de boas-vindas + opção de convidar primeiro employee
-- [ ] 2.5.5 Step 3 (employee): Tela com opções "Tenho um convite" (inserir código/link) ou "Solicitar conexão" (buscar employer por nome/phone)
-- [ ] 2.5.6 API: `PATCH /api/profile/onboarding` — atualiza role e marca `onboarding_completed = true`
-- [ ] 2.5.7 Middleware: redirecionar para `/onboarding` se autenticado mas `onboarding_completed = false`
+- [x] 2.5.1 Tela de onboarding (`src/app/onboarding/page.tsx`) — steps name + role selection
+- [x] 2.5.2 Step 1: Completar nome
+- [x] 2.5.3 Step 2: Selecionar role — botões grandes com ícones (Briefcase/User)
+- [x] 2.5.4 Step 3 (employer): Redireciona para /funcionarios após onboarding
+- [ ] 2.5.5 Step 3 (employee): Tela com opções "Tenho um convite" ou "Solicitar conexão"
+- [x] 2.5.6 Atualização de profile via Supabase client direto (sem API route separada)
+- [x] 2.5.7 Redirect: root page e authenticated layout redirecionam para /onboarding se incompleto
 
 ### Employer: Convidar Employee
 
-- [ ] 2.5.8 Tela de funcionários (`src/app/(authenticated)/funcionarios/page.tsx`) — lista de employees vinculados + botão "Convidar"
-- [ ] 2.5.9 Modal/tela de convite: gera link compartilhável (`/convite/{token}`) + opção de enviar via WhatsApp (deep link `whatsapp://send?text=...`) ou copiar link
-- [ ] 2.5.10 API: `POST /api/invites` — cria registro em `employer_invites` com token UUID, expires_at (7 dias)
-- [ ] 2.5.11 Tela pública de convite (`src/app/convite/[token]/page.tsx`) — mostra nome do employer, botão "Aceitar convite" (redireciona para login/signup se não autenticado)
-- [ ] 2.5.12 API: `POST /api/invites/[token]/accept` — valida token, vincula employee ao employer (seta `employer_id` no profile), marca invite como accepted
-- [ ] 2.5.13 Employer: ver convites pendentes e poder revogar
+- [x] 2.5.8 Tela de funcionários (`src/app/(authenticated)/funcionarios/page.tsx`) — lista employees, convites pendentes, solicitações
+- [x] 2.5.9 Convite: gera link + botão copiar + compartilhar via WhatsApp (wa.me deep link)
+- [x] 2.5.10 Criação de invite via Supabase client (insert em employer_invites, token auto-gerado)
+- [x] 2.5.11 Tela pública de convite (`src/app/convite/[token]/page.tsx`) — mostra employer, aceitar/recusar, redirect se não autenticado
+- [x] 2.5.12 Accept: vincula employee ao employer + marca invite como accepted (client-side direto via RLS)
+- [x] 2.5.13 Employer: ver convites pendentes + revogar
 
 ### Employee: Solicitar Conexão
 
 - [ ] 2.5.14 Tela de busca de employer: campo de busca por nome ou telefone
 - [ ] 2.5.15 API: `POST /api/connection-requests` — cria solicitação pendente
-- [ ] 2.5.16 Employer: notificação/badge de solicitações pendentes na tela de funcionários
-- [ ] 2.5.17 Employer: aceitar/rejeitar solicitação → se aceito, vincula employee (seta `employer_id`)
+- [x] 2.5.16 Employer: solicitações pendentes exibidas na tela de funcionários com aceitar/rejeitar
+- [x] 2.5.17 Employer: aceitar vincula employee (seta employer_id), rejeitar atualiza status
 - [ ] 2.5.18 Employee: ver status da solicitação (pendente/aceita/rejeitada)
 
 **Entregável:** Onboarding completo, employer convida via link/WhatsApp, employee solicita conexão.
