@@ -118,7 +118,7 @@ export default function OnboardingPage() {
               >
                 <User className="h-8 w-8 text-primary" />
                 <div className="text-left">
-                  <p className="font-semibold">Sou Empregado(a)</p>
+                  <p className="font-semibold">Sou Funcionário(a)</p>
                   <p className="text-sm text-muted-foreground">
                     Quero registrar meu ponto diário
                   </p>
