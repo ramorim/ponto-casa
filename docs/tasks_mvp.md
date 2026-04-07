@@ -156,14 +156,14 @@
 
 ## Fase 6 — Fechamento Mensal e Aceite Digital
 
-- [ ] 6.1 API route `POST /api/closings/generate` — calcula total_hours, overtime, delays, absences a partir das entries do mês
-- [ ] 6.2 Lógica de cálculo em `src/lib/calculations/hours.ts`: `calculateDailyHours()`, `calculateMonthSummary()` — pure functions
-- [ ] 6.3 Testes unitários dos cálculos: dia normal, hora extra, atraso, saída antecipada, almoço sem retorno, falta, dia parcial
-- [ ] 6.4 Tela fechamento (`src/app/(authenticated)/fechamento/page.tsx`) — seletor de mês, card resumo, tabela diária, botão gerar/recalcular (employer)
-- [ ] 6.5 API route `POST /api/closings/[id]/accept` — employee confirma, seta accepted=true, accepted_at, accepted_by
-- [ ] 6.6 UI de aceite: resumo + checkbox/botão "Confirmo que os horários acima correspondem à minha jornada", dialog de confirmação, badge de aceite
-- [ ] 6.7 Lock de entries após aceite: PATCH verifica se mês está fechado, bloqueia edição
-- [ ] 6.8 API route `POST /api/closings/[id]/reopen` — employer reabre mês com audit log
+- [x] 6.1 API POST `/api/closings/generate` — busca entries, calcula via pure functions, upsert em monthly_closings
+- [x] 6.2 `src/lib/calculations/hours.ts`: calculateDailyHours(), calculateMonthSummary(), getWorkingDays()
+- [ ] 6.3 Testes unitários dos cálculos (pendente)
+- [x] 6.4 Tela `/fechamento` — seletor mês, 4 cards resumo (total, extras, atrasos, faltas), gerar/recalcular
+- [x] 6.5 API POST `/api/closings/[id]/accept` — employee confirma, seta accepted_at/accepted_by
+- [x] 6.6 UI aceite: card com botão "Confirmo que os horários estão corretos", badge verde/âmbar
+- [x] 6.7 Lock: PATCH /api/time-entries/[id] já verifica mês fechado (409), manual entry também
+- [x] 6.8 API POST `/api/closings/[id]/reopen` — reason obrigatório, limpa aceite, salva nota
 
 **Entregável:** Workflow completo de fechamento mensal com aceite digital e lock de entradas.
 
