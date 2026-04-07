@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   CalendarOff,
   Timer,
+  FileDown,
 } from "lucide-react";
 
 interface Closing {
@@ -66,6 +67,8 @@ export default function FechamentoPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Reopen dialog
   const [showReopenDialog, setShowReopenDialog] = useState(false);
@@ -202,6 +205,32 @@ export default function FechamentoPage() {
       toast.error("Erro de conexão");
     } finally {
       setIsReopening(false);
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (!closing) return;
+    setIsDownloadingPdf(true);
+
+    try {
+      const res = await fetch(`/api/closings/${closing.id}/pdf`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Erro ao gerar PDF");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `espelho-ponto-${closing.month_ref}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Erro ao baixar PDF");
+    } finally {
+      setIsDownloadingPdf(false);
     }
   }
 
@@ -381,6 +410,21 @@ export default function FechamentoPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Export PDF */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+            >
+              {isDownloadingPdf ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="mr-2 h-4 w-4" />
+              )}
+              Exportar PDF
+            </Button>
 
             {/* Employer: reopen */}
             {isEmployer && closing.employee_accepted && (

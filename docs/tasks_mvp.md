@@ -171,11 +171,11 @@
 
 ## Fase 7 — Exportação PDF
 
-- [ ] 7.1 Instalar `@react-pdf/renderer`
-- [ ] 7.2 Template PDF: header (logo, mês, nomes), tabela diária, resumo, status aceite, rodapé com data de geração
-- [ ] 7.3 API route `GET /api/closings/[id]/pdf` — gera PDF server-side, retorna `application/pdf`
-- [ ] 7.4 Botão "Exportar PDF" na tela de fechamento com loading state
-- [ ] 7.5 Estilização para A4: margens, fontes, paginação adequada
+- [x] 7.1 Instalado `@react-pdf/renderer`
+- [x] 7.2 Template `src/lib/pdf/timesheet-template.tsx`: header, info (funcionário/empregador/ref), tabela diária, resumo 4 cards, aceite digital, footer
+- [x] 7.3 API GET `/api/closings/[id]/pdf` — renderiza server-side, retorna application/pdf com Content-Disposition
+- [x] 7.4 Botão "Exportar PDF" na tela de fechamento com loading spinner, download via blob URL
+- [x] 7.5 Estilização A4: margens 40px, Helvetica, tabela com header cinza, fins de semana destacados
 
 **Entregável:** PDF do espelho mensal pronto para arquivamento.
 
