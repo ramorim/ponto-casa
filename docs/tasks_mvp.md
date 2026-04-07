@@ -112,16 +112,16 @@
 
 ## Fase 3 — Bater Ponto (Core)
 
-- [ ] 3.1 API route `POST /api/time-entries` — recebe event_type, lat/lng, device_info, note; usa `NOW()` para timestamp
-- [ ] 3.2 Validação de fluxo server-side: consultar último registro do dia, bloquear sequência inválida (422 com mensagem clara)
-- [ ] 3.3 Tela principal (`src/app/(authenticated)/page.tsx`) — 4 botões grandes: Entrada, Saída Almoço, Volta Almoço, Saída
-- [ ] 3.4 Estado client-side: fetch entries do dia, habilitar/desabilitar botões conforme próxima ação válida
-- [ ] 3.5 Captura opcional de geolocalização (`navigator.geolocation`) — não bloquear punch se negado/timeout
-- [ ] 3.6 Captura de device info (`navigator.userAgent`)
-- [ ] 3.7 Input opcional de observação (campo colapsável, max 200 chars)
-- [ ] 3.8 Feedback de confirmação: toast com "Entrada registrada às 08:03" (timestamp do servidor)
-- [ ] 3.9 Tratamento de erros: rede (retry), validação (mensagem), loading state nos botões
-- [ ] 3.10 API route `GET /api/time-entries/today` — entries do dia para o employee autenticado
+- [x] 3.1 API route `POST /api/time-entries` — recebe event_type, lat/lng, device_info, note; usa `NOW()` para timestamp
+- [x] 3.2 Validação de fluxo server-side (`src/lib/time-entry-validation.ts`): regras de fluxo, mensagens de erro, 422
+- [x] 3.3 Tela principal (`src/app/(authenticated)/ponto/page.tsx`) — 4 botões grandes coloridos com ícones
+- [x] 3.4 Estado client-side: fetch entries do dia, habilitar/desabilitar botões conforme próxima ação válida
+- [x] 3.5 Captura opcional de geolocalização (timeout 5s, não bloqueia se negado)
+- [x] 3.6 Captura de device info (`navigator.userAgent`, truncado 200 chars)
+- [x] 3.7 Input opcional de observação (campo colapsável com chevron, max 200 chars)
+- [x] 3.8 Feedback de confirmação: toast com "Entrada registrada às 08:03" (timestamp do servidor)
+- [x] 3.9 Tratamento de erros: mensagem de validação, loading spinner nos botões, toast de erro de rede
+- [x] 3.10 API route `GET /api/time-entries/today` — entries do dia para o employee autenticado
 
 **Entregável:** Employee bate ponto com fluxo validado, feedback visual, geolocation opcional.
 
