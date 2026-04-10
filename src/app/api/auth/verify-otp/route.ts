@@ -16,30 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isEmail = phoneOrEmail.includes("@");
-
-    // ── Email path: use Supabase Auth's built-in OTP verification ──
-    if (isEmail) {
-      const supabase = await createClient();
-      const { error } = await supabase.auth.verifyOtp({
-        email: phoneOrEmail,
-        token: code,
-        type: "email",
-      });
-
-      if (error) {
-        console.error("Email verifyOtp error:", error);
-        return NextResponse.json(
-          { error: error.message || "Código incorreto ou expirado" },
-          { status: 401 }
-        );
-      }
-
-      // Cookies are automatically set by the server client
-      return NextResponse.json({ authenticated: true });
-    }
-
-    // ── WhatsApp path: custom OTP verification + admin user creation ──
+    // ── Unified flow: custom OTP verification for both email and WhatsApp ──
     const admin = createAdminClient();
 
     const { data: otpRecords } = await admin
@@ -81,22 +58,24 @@ export async function POST(request: NextRequest) {
       .update({ verified: true })
       .eq("id", otpRecord.id);
 
-    // Phone-based users get a synthetic email
-    const phoneDigits = phoneOrEmail.replace(/\D/g, "");
-    const syntheticEmail = `${phoneDigits}@pontocasa.app`;
+    // Determine the auth email: real email or synthetic for phone users
+    const isEmail = phoneOrEmail.includes("@");
+    const authEmail = isEmail
+      ? phoneOrEmail
+      : `${phoneOrEmail.replace(/\D/g, "")}@pontocasa.app`;
 
     // Find or create user
     const { data: usersList } = await admin.auth.admin.listUsers();
-    const existingUser = usersList?.users?.find(
-      (u) => u.email === syntheticEmail
-    );
+    const existingUser = usersList?.users?.find((u) => u.email === authEmail);
 
     if (!existingUser) {
       const { error: createError } = await admin.auth.admin.createUser({
-        email: syntheticEmail,
+        email: authEmail,
         password: crypto.randomUUID(),
         email_confirm: true,
-        user_metadata: { phone: phoneOrEmail },
+        user_metadata: {
+          phone: isEmail ? undefined : phoneOrEmail,
+        },
       });
 
       if (createError) {
@@ -108,11 +87,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate magic link token and verify it on the server client to set cookies
+    // Generate magic link and verify on server to set session cookies
     const { data: linkData, error: linkError } =
       await admin.auth.admin.generateLink({
         type: "magiclink",
-        email: syntheticEmail,
+        email: authEmail,
       });
 
     if (linkError || !linkData) {

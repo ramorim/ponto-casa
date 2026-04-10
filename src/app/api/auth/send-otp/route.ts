@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { generateOtpCode, hashOtpCode } from "@/lib/otp";
 import { sendWhatsAppOtp } from "@/lib/zapi";
+import { sendEmailOtp } from "@/lib/resend";
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_SENDS_PER_WINDOW = 3;
@@ -25,26 +25,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Email path: use Supabase Auth's built-in email OTP ─────────
-    if (type === "email") {
-      const supabase = await createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: phoneOrEmail,
-        options: { shouldCreateUser: true },
-      });
-
-      if (error) {
-        console.error("Email OTP error:", error);
-        return NextResponse.json(
-          { error: error.message || "Erro ao enviar email" },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({ message: "Código enviado por email" });
-    }
-
-    // ── WhatsApp path: custom OTP via Z-API ─────────────────────────
     const admin = createAdminClient();
 
     // Rate limiting
@@ -65,6 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate and save OTP (same flow for email and WhatsApp)
     const code = generateOtpCode();
     const codeHash = hashOtpCode(code);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
@@ -84,14 +65,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    try {
-      await sendWhatsAppOtp(phoneOrEmail, code);
-    } catch (err) {
-      console.error("Z-API send error:", err);
-      return NextResponse.json(
-        { error: "Erro ao enviar WhatsApp. Tente por email." },
-        { status: 502 }
-      );
+    // Send OTP via the appropriate channel
+    if (type === "whatsapp") {
+      try {
+        await sendWhatsAppOtp(phoneOrEmail, code);
+      } catch (err) {
+        console.error("Z-API send error:", err);
+        return NextResponse.json(
+          { error: "Erro ao enviar WhatsApp. Tente por email." },
+          { status: 502 }
+        );
+      }
+    } else {
+      try {
+        await sendEmailOtp(phoneOrEmail, code);
+      } catch (err) {
+        console.error("Resend send error:", err);
+        return NextResponse.json(
+          { error: "Erro ao enviar email. Tente novamente." },
+          { status: 502 }
+        );
+      }
     }
 
     return NextResponse.json({ message: "Código enviado", expiresAt });
