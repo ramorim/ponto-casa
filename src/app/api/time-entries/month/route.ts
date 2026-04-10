@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     const { data: entries, error } = await supabase
       .from("time_entries")
-      .select("id, event_type, timestamp_server, note")
+      .select("id, event_type, timestamp_server, note, latitude, longitude, device_info")
       .eq("employee_id", targetEmployeeId)
       .gte("timestamp_server", startDate.toISOString())
       .lt("timestamp_server", new Date(nextMonth).toISOString())

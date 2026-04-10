@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
-
 const DEVICE_ID_KEY = "ponto-casa-device-id";
 
 function getOrCreateDeviceId(): string {
@@ -50,75 +48,31 @@ function detectDeviceInfo(): {
 }
 
 export async function registerDevice() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
   const deviceId = getOrCreateDeviceId();
   if (!deviceId) return;
 
   const { deviceName, deviceType, browser } = detectDeviceInfo();
 
-  await supabase.from("user_devices").upsert(
-    {
-      user_id: user.id,
+  await fetch("/api/devices", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
       device_id: deviceId,
       device_name: deviceName,
       device_type: deviceType,
       browser,
-      last_active_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,device_id" }
-  );
-}
-
-export async function updateLastActive() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const deviceId = getOrCreateDeviceId();
-  if (!deviceId) return;
-
-  await supabase
-    .from("user_devices")
-    .update({ last_active_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .eq("device_id", deviceId);
+    }),
+  });
 }
 
 export async function getUserDevices() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data } = await supabase
-    .from("user_devices")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("last_active_at", { ascending: false });
-
-  return data || [];
+  const res = await fetch("/api/devices");
+  if (!res.ok) return [];
+  return res.json();
 }
 
 export async function removeDevice(deviceId: string) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase
-    .from("user_devices")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("device_id", deviceId);
+  await fetch(`/api/devices/${deviceId}`, { method: "DELETE" });
 }
 
 export function getCurrentDeviceId(): string {

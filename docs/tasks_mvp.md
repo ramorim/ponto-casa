@@ -183,19 +183,115 @@
 
 ## Fase 8 — Polish e Produção
 
-- [ ] 8.1 Timezone: armazenar UTC, exibir em `America/Sao_Paulo`, lógica de fronteira de dia
-- [ ] 8.2 Offline fallback PWA: cache do shell, banner "Você está offline", cache readonly do histórico
-- [ ] 8.3 Loading/skeleton states com shadcn `Skeleton`
-- [ ] 8.4 Empty states: "Nenhum registro neste mês", "Nenhum funcionário cadastrado"
-- [ ] 8.5 Error boundary global (`error.tsx`) com mensagem amigável + retry
-- [ ] 8.6 Navegação: tab bar inferior — Employee: Ponto, Histórico, Fechamento, Config; Employer: Ponto, Histórico, Fechamento, Funcionários, Config
-- [ ] 8.7 Tela de configurações: ver/gerenciar dispositivos conectados (listar, remover), dados do perfil
-- [ ] 8.8 Employer: gestão de employees na tela de funcionários (já criada em 2.5.8) — definir/editar horário de trabalho
-- [ ] 8.9 Rate limiting no OTP já implementado na API (2.20); validar brute-force no verify (max 5 tentativas por código, lockout temporário após 10 falhas seguidas por phone/email)
-- [ ] 8.10 Exibição do horário do servidor na tela de ponto (sync periódico)
-- [ ] 8.11 Deploy Vercel: domínio, env vars, connection pooling Supabase
+- [x] 8.1 Timezone: armazenar UTC, exibir em `America/Sao_Paulo`, lógica de fronteira de dia
+- [x] 8.2 Offline fallback: `OfflineBanner` sticky top amarelo com `navigator.onLine` (online/offline events)
+- [x] 8.3 Skeleton states: `src/components/skeletons.tsx` em todas as telas (ponto, funcionários, histórico, fechamento, perfil, layout)
+- [x] 8.4 Empty states: mensagens em funcionários, histórico, fechamento
+- [x] 8.5 Error boundary: `error.tsx` (retry + voltar início) + `global-error.tsx` (fallback sem layout)
+- [x] 8.6 Navegação: `BottomNav` com tabs por role (Equipe/Histórico/Fechamento/Perfil vs Ponto/Histórico/Fechamento/Perfil)
+- [x] 8.7 Tela de perfil: dados pessoais + `DevicesCard` (listar/remover dispositivos) + botão logout
+- [x] 8.8 Work schedule: API `GET/POST /api/work-schedules` + `WorkScheduleDialog` (modal entrada/saída/almoço), botão relógio em cada funcionário
+- [x] 8.9 Rate limiting OTP: implementado em send-otp (3/10min) + verify-otp (5 tentativas por código)
+- [x] 8.10 Relógio ao vivo na tela `/ponto` em timezone São Paulo
+- [ ] 8.11 Deploy Vercel: domínio, env vars, connection pooling Supabase (pendente)
 
 **Entregável:** App pronto para produção com UX polido e segurança.
+
+---
+
+## Fase 9 — Aplicativo Mobile Nativo (Capacitor)
+
+> **Estratégia escolhida:** **Capacitor em modo remoto** — o app nativo é uma casca WebView (iOS WKWebView / Android WebView) que aponta para o Next.js já hospedado. Reusa **100%** do código atual, atualizações são instantâneas (deploy = atualização), e plugins nativos do Capacitor (ex: `@capacitor/geolocation`) são acessíveis via JS bridge para casos que precisam de APIs do dispositivo.
+>
+> **Por que Capacitor (e não RN):** o app é simples, performance não é crítica, queremos uma única base de código, redeploy instantâneo sem republicar nas stores, e o reuso máximo do que já foi feito (Next.js + BFF + APIs).
+
+### 9A — Setup Capacitor
+
+- [ ] 9.1 Instalar dependências: `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/android`
+- [ ] 9.2 `npx cap init "Ponto Casa" "app.pontocasa"` — gerar `capacitor.config.ts`
+- [ ] 9.3 Configurar `capacitor.config.ts` em modo **remoto**: `server.url = "https://app.pontocasa.app"` (ou domínio de produção); `server.cleartext = false`
+- [ ] 9.4 Adicionar projeto iOS: `npx cap add ios`
+- [ ] 9.5 Adicionar projeto Android: `npx cap add android`
+- [ ] 9.6 Configurar `capacitor.config.ts` extras: app id, app name, splash screen, status bar, allowlist de domínios
+- [ ] 9.7 Gerar ícones e splash via `@capacitor/assets`: `npx capacitor-assets generate` a partir de PNGs base
+- [ ] 9.8 Configurar `appBoundDomains` no `Info.plist` (iOS) para persistir cookies HttpOnly do Supabase Auth dentro do WKWebView
+
+### 9B — Geolocation Nativa
+
+- [ ] 9.9 Instalar plugin `@capacitor/geolocation`
+- [ ] 9.10 Criar abstração `src/lib/native-geolocation.ts` que detecta `Capacitor.isNativePlatform()` e usa o plugin nativo no app, ou `navigator.geolocation` no browser
+- [ ] 9.11 Refatorar `src/app/(authenticated)/ponto/page.tsx` para usar a abstração — manter as garantias de segurança (captura em tempo real, abortar punch se permission granted + falha)
+- [ ] 9.12 iOS: adicionar `NSLocationWhenInUseUsageDescription` no `Info.plist` com texto explicativo em português ("O Ponto Casa registra sua localização ao bater ponto, para auditoria.")
+- [ ] 9.13 Android: adicionar `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION` no `AndroidManifest.xml`
+- [ ] 9.14 Testar em dispositivo real: primeira permissão, batidas múltiplas, revogação no settings do SO
+
+### 9C — Auth e cookies dentro do WebView
+
+- [ ] 9.15 Validar fluxo OTP completo dentro do WebView (login, verify, sessão persistente)
+- [ ] 9.16 Confirmar persistência de cookies HttpOnly entre sessões do app (fechar e reabrir)
+- [ ] 9.17 Tratar deep links: rota `pontocasa://convite/{token}` deve abrir a tela `/convite/[token]` direto no app
+- [ ] 9.18 Configurar Universal Links (iOS) e App Links (Android) para que links HTTPS reais (`https://app.pontocasa.app/convite/...`) abram o app instalado em vez do browser
+
+### 9D — UX nativa
+
+- [ ] 9.19 Splash screen com logo do Ponto Casa (config via `capacitor.config.ts`)
+- [ ] 9.20 Status bar: cor `#1e40af`, texto branco
+- [ ] 9.21 Tratamento de safe areas (notch iOS, gesture bar Android) — adicionar `safe-area-inset-*` no CSS global
+- [ ] 9.22 Plugin `@capacitor/keyboard` — ajustar comportamento ao abrir teclado (não cobrir inputs)
+- [ ] 9.23 Detectar offline via `@capacitor/network` e mostrar banner amigável
+- [ ] 9.24 Navegação: validar que back button do Android funciona corretamente (volta navegação web; sai do app na rota raiz)
+
+### 9E — Build e Stores
+
+- [ ] 9.25 Configurar EAS Build (Expo Application Services) ou usar Xcode/Android Studio direto para builds de produção
+- [ ] 9.26 Gerar build de produção iOS (`.ipa`) — Xcode com Apple Developer account
+- [ ] 9.27 Gerar build de produção Android (`.aab`) — Android Studio + keystore
+- [ ] 9.28 Conta Apple Developer ($99/ano) — criar app no App Store Connect
+- [ ] 9.29 Conta Google Play Developer ($25 único) — criar app no Play Console
+- [ ] 9.30 Screenshots, descrição, política de privacidade, termo de uso — preparar assets para ambas as stores
+- [ ] 9.31 Submissão para review na App Store (atenção: justificar o uso de localização no campo de privacy)
+- [ ] 9.32 Submissão para review na Play Store
+
+**Entregável:** App nativo iOS + Android publicado nas stores, apontando para o backend Next.js hospedado, com geolocation nativa precisa.
+
+---
+
+## Backlog (Pós-MVP)
+
+> Itens identificados durante o desenvolvimento que **NÃO** entram no MVP, mas estão registrados para planejamento futuro.
+
+### Notificações
+
+- [ ] **Notificações locais agendadas** (Capacitor `@capacitor/local-notifications`)
+  - Lembrar funcionário(a) de bater entrada/saída/almoço baseado no `work_schedule` cadastrado
+  - Funciona com app fechado, sem precisar de servidor de push
+  - Esforço: ~1 dia. Sem implicações de App Review.
+- [ ] **Notificações push remotas** (Firebase Cloud Messaging via `@capacitor/push-notifications`)
+  - Notificar empregador quando funcionário(a) bate ponto, quando há solicitação de conexão pendente, quando fechamento foi aceito/rejeitado
+  - Notificar funcionário(a) quando empregador edita um registro ou gera fechamento
+
+### Integração eSocial Doméstico
+
+- [ ] **Fase A — Exportação CSV** no formato esperado pelo eSocial (para empregador conferir e digitar manualmente)
+  - Esforço: 1-2 dias. Resolve 90% da dor sem complexidade técnica/regulatória.
+- [ ] **Fase B — Integração via terceiros** (Tecnospeed, NuvemFiscal, etc) — após validação do produto e tração de mercado
+- [ ] **Fase C — Integração direta com webservices SOAP do governo** — apenas se virar core business
+
+### Recursos avançados de localização (não recomendados pra v1)
+
+- [ ] **Geofencing com punch automático**: detectar quando funcionário(a) entra/sai do raio do endereço cadastrado e sugerir batida
+  - Risco regulatório: o registro precisa ser ativo pelo trabalhador para validade jurídica
+  - Risco técnico: permissão `Always` no iOS é difícil de aprovar na App Store
+  - Consumo de bateria significativo
+
+### Outros
+
+- [ ] **Assinatura manuscrita** no aceite do fechamento mensal (canvas drawing, salvar como PNG embutido no PDF) — listado no roadmap v2 do PRD
+- [ ] **Cálculo automático de adicional noturno** (entre 22h e 5h)
+- [ ] **Banco de horas** com saldo acumulado mês a mês
+- [ ] **Férias e 13º** — cálculo proporcional, exportação para folha
+- [ ] **Multi-empregadores por funcionário** (mesma pessoa trabalhando em mais de uma casa)
+- [ ] **App offline-first** com fila de batidas pendentes para sincronizar depois (atualmente o punch requer internet para timestamp do servidor)
 
 ---
 
@@ -217,13 +313,16 @@ Fase 2.5 (Onboarding + Conexão)
                              Fase 7 (PDF)
                                    │
                              Fase 8 (Polish)
+                                   │
+                             Fase 9 (Capacitor — opcional após MVP web)
 ```
 
 - Fases 3 e 4 podem ser paralelas após Fase 2.5
 - Fase 5 depende de Fase 4 (UI de histórico para modal de edição)
 - Fase 6 depende de Fases 3+4
 - Fase 8 pode rodar em paralelo com fases finais
+- Fase 9 só faz sentido após Fase 8 (web pronta para produção)
 
 ---
 
-**Total: 78 tasks across 9 phases**
+**Total: 110 tasks across 10 phases**

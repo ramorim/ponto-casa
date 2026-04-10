@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/lib/supabase/client";
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,12 +22,19 @@ import type { EventType } from "@/lib/time-entry-validation";
 import { EditEntryDialog } from "@/components/edit-entry-dialog";
 import { AddManualEntryDialog } from "@/components/add-manual-entry-dialog";
 import { AuditLog } from "@/components/audit-log";
+import { HistoryTableSkeleton } from "@/components/skeletons";
+import {
+  DayDetailDialog,
+  type DayEntryDetail,
+} from "@/components/day-detail-dialog";
 
 interface TimeEntry {
   id: string;
   event_type: EventType;
   timestamp_server: string;
   note: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface EntryRef {
@@ -35,6 +42,8 @@ interface EntryRef {
   time: string;
   timestamp_server: string;
   note: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface DayRow {
@@ -55,7 +64,18 @@ interface EmployeeOption {
 }
 
 export default function HistoricoPage() {
+  return (
+    <Suspense fallback={<HistoryTableSkeleton />}>
+      <HistoricoContent />
+    </Suspense>
+  );
+}
+
+function HistoricoContent() {
   const { profile } = useAuth();
+  const searchParams = useSearchParams();
+  const initialEmployeeId = searchParams.get("employee_id");
+
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -63,7 +83,9 @@ export default function HistoricoPage() {
   const [rows, setRows] = useState<DayRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
+    initialEmployeeId
+  );
 
   // Edit state
   const [editingEntry, setEditingEntry] = useState<{
@@ -80,24 +102,28 @@ export default function HistoricoPage() {
   // Audit state
   const [auditEntryId, setAuditEntryId] = useState<string | null>(null);
 
+  // Day detail dialog state
+  const [detailDate, setDetailDate] = useState<string | null>(null);
+
   const isEmployer = profile?.role === "employer";
   const canEdit = isEmployer && !!selectedEmployeeId;
-  const supabase = createClient();
-
   useEffect(() => {
-    if (!isEmployer || !profile) return;
+    if (!isEmployer) return;
     async function loadEmployees() {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .eq("employer_id", profile!.id)
-        .eq("is_active", true);
-      setEmployees(data || []);
+      const res = await fetch("/api/employees");
+      if (res.ok) setEmployees(await res.json());
     }
     loadEmployees();
-  }, [isEmployer, profile, supabase]);
+  }, [isEmployer]);
 
   const fetchEntries = useCallback(async () => {
+    // Employers must select an employee before fetching
+    if (isEmployer && !selectedEmployeeId) {
+      setRows([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const params = new URLSearchParams({ month: currentMonth });
@@ -112,7 +138,7 @@ export default function HistoricoPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMonth, selectedEmployeeId]);
+  }, [currentMonth, selectedEmployeeId, isEmployer]);
 
   useEffect(() => {
     fetchEntries();
@@ -168,10 +194,10 @@ export default function HistoricoPage() {
             value={selectedEmployeeId || ""}
             onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
           >
-            <option value="">Meus registros</option>
+            <option value="">Selecione um funcionário</option>
             {employees.map((emp) => (
               <option key={emp.id} value={emp.id}>
-                {emp.name}
+                {emp.name || "Sem nome"}
               </option>
             ))}
           </select>
@@ -192,9 +218,13 @@ export default function HistoricoPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <HistoryTableSkeleton />
+      ) : isEmployer && !selectedEmployeeId ? (
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {employees.length === 0
+            ? "Nenhum funcionário vinculado ainda."
+            : "Selecione um funcionário para ver o histórico."}
+        </p>
       ) : rows.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
           Nenhum registro neste mês
@@ -225,6 +255,7 @@ export default function HistoricoPage() {
                           row={row}
                           canEdit={canEdit}
                           onCellClick={handleCellClick}
+                          onShowDetail={setDetailDate}
                           auditEntryId={auditEntryId}
                           onToggleAudit={toggleAudit}
                         />
@@ -251,7 +282,17 @@ export default function HistoricoPage() {
                 >
                   <CardHeader className="pb-1 pt-3 px-4">
                     <CardTitle className="text-xs font-mono text-muted-foreground flex items-center">
-                      <span>{row.dayLabel}</span>
+                      {hasEntries ? (
+                        <button
+                          type="button"
+                          className="text-primary underline-offset-2 hover:underline"
+                          onClick={() => setDetailDate(row.date)}
+                        >
+                          {row.dayLabel}
+                        </button>
+                      ) : (
+                        <span>{row.dayLabel}</span>
+                      )}
                       {row.totalHours && (
                         <span className="ml-auto font-semibold text-foreground">
                           {row.totalHours}
@@ -324,8 +365,39 @@ export default function HistoricoPage() {
           defaultDate={manualDate}
         />
       )}
+
+      {/* Day detail dialog */}
+      {detailDate && (
+        <DayDetailDialog
+          open={true}
+          onClose={() => setDetailDate(null)}
+          date={detailDate}
+          entries={getDayEntries(rows, detailDate)}
+        />
+      )}
     </main>
   );
+}
+
+function getDayEntries(rows: DayRow[], date: string): DayEntryDetail[] {
+  const row = rows.find((r) => r.date === date);
+  if (!row) return [];
+  const types = ["entrada", "saida_almoco", "volta_almoco", "saida"] as const;
+  return types
+    .map((type) => {
+      const ref = row[type];
+      if (!ref) return null;
+      return {
+        id: ref.id,
+        event_type: type,
+        timestamp_server: ref.timestamp_server,
+        time: ref.time,
+        note: ref.note,
+        latitude: ref.latitude,
+        longitude: ref.longitude,
+      } as DayEntryDetail;
+    })
+    .filter((e): e is DayEntryDetail => e !== null);
 }
 
 // ── Table Row Component ──
@@ -334,12 +406,14 @@ function TableRow({
   row,
   canEdit,
   onCellClick,
+  onShowDetail,
   auditEntryId,
   onToggleAudit,
 }: {
   row: DayRow;
   canEdit: boolean;
   onCellClick: (ref: EntryRef | null, eventType: EventType, date: string) => void;
+  onShowDetail: (date: string) => void;
   auditEntryId: string | null;
   onToggleAudit: (id: string) => void;
 }) {
@@ -353,7 +427,19 @@ function TableRow({
           row.isWeekend ? "bg-muted/30 text-muted-foreground" : ""
         } ${row.isIncomplete ? "bg-amber-50" : ""}`}
       >
-        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{row.dayLabel}</td>
+        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
+          {hasAnyEntry ? (
+            <button
+              type="button"
+              className="text-primary underline-offset-2 hover:underline"
+              onClick={() => onShowDetail(row.date)}
+            >
+              {row.dayLabel}
+            </button>
+          ) : (
+            row.dayLabel
+          )}
+        </td>
         {types.map((type) => {
           const ref = row[type];
           return (
@@ -410,7 +496,7 @@ function buildDayRows(month: string, entries: TimeEntry[]): DayRow[] {
   const [year, monthNum] = month.split("-").map(Number);
   const daysInMonth = new Date(year, monthNum, 0).getDate();
 
-  const byDate = new Map<string, Map<EventType, { id: string; time: string; timestamp_server: string; note: string | null }>>();
+  const byDate = new Map<string, Map<EventType, EntryRef>>();
   for (const entry of entries) {
     const spDate = toSaoPauloDate(entry.timestamp_server);
     const spTime = toSaoPauloTime(entry.timestamp_server);
@@ -420,6 +506,8 @@ function buildDayRows(month: string, entries: TimeEntry[]): DayRow[] {
       time: spTime,
       timestamp_server: entry.timestamp_server,
       note: entry.note,
+      latitude: entry.latitude,
+      longitude: entry.longitude,
     });
   }
 

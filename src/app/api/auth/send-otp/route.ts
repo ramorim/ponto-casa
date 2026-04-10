@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { generateOtpCode, hashOtpCode } from "@/lib/otp";
 import { sendWhatsAppOtp } from "@/lib/zapi";
 
@@ -24,14 +25,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createAdminClient();
+    // ── Email path: use Supabase Auth's built-in email OTP ─────────
+    if (type === "email") {
+      const supabase = await createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: phoneOrEmail,
+        options: { shouldCreateUser: true },
+      });
 
-    // Rate limiting: check recent OTP sends
+      if (error) {
+        console.error("Email OTP error:", error);
+        return NextResponse.json(
+          { error: error.message || "Erro ao enviar email" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ message: "Código enviado por email" });
+    }
+
+    // ── WhatsApp path: custom OTP via Z-API ─────────────────────────
+    const admin = createAdminClient();
+
+    // Rate limiting
     const windowStart = new Date(
       Date.now() - RATE_LIMIT_WINDOW_MS
     ).toISOString();
 
-    const { count } = await supabase
+    const { count } = await admin
       .from("otp_codes")
       .select("*", { count: "exact", head: true })
       .eq("phone_or_email", phoneOrEmail)
@@ -48,8 +69,7 @@ export async function POST(request: NextRequest) {
     const codeHash = hashOtpCode(code);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    // Save OTP to DB
-    const { error: insertError } = await supabase.from("otp_codes").insert({
+    const { error: insertError } = await admin.from("otp_codes").insert({
       phone_or_email: phoneOrEmail,
       code_hash: codeHash,
       type,
@@ -64,24 +84,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send OTP
-    if (type === "whatsapp") {
-      try {
-        await sendWhatsAppOtp(phoneOrEmail, code);
-      } catch (err) {
-        console.error("Z-API send error:", err);
-        return NextResponse.json(
-          { error: "Erro ao enviar WhatsApp. Tente por email." },
-          { status: 502 }
-        );
-      }
-    } else {
-      // Email OTP — use Supabase built-in or a mail service
-      // For now, log the code in development
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[DEV] OTP for ${phoneOrEmail}: ${code}`);
-      }
-      // TODO: integrate email sending (Resend, Supabase SMTP, etc.)
+    try {
+      await sendWhatsAppOtp(phoneOrEmail, code);
+    } catch (err) {
+      console.error("Z-API send error:", err);
+      return NextResponse.json(
+        { error: "Erro ao enviar WhatsApp. Tente por email." },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ message: "Código enviado", expiresAt });

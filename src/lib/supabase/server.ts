@@ -5,8 +5,8 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:54321",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder",
+    process.env.SUPABASE_URL || "http://localhost:54321",
+    process.env.SUPABASE_ANON_KEY || "placeholder",
     {
       cookies: {
         getAll() {

@@ -65,13 +65,14 @@ function VerifyOtpContent() {
     setIsLoading(false);
 
     if (result.success) {
-      router.push("/");
+      // Hard navigation so middleware sees the new session cookies
+      window.location.href = "/";
     } else {
       setError(result.error || "Código incorreto");
       setDigits(Array(OTP_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     }
-  }, [phoneOrEmail, verifyOtp, router]);
+  }, [phoneOrEmail, verifyOtp]);
 
   function handleDigitChange(index: number, value: string) {
     if (!/^\d?$/.test(value)) return;

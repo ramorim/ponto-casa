@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -11,17 +13,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import {
+  cleanDigits,
+  isValidCpf,
+  isValidPhoneBr,
+  maskCpf,
+  maskPhoneBr,
+} from "@/lib/validation";
 
-type InviteState = "loading" | "valid" | "invalid" | "accepted" | "error";
-
-interface InviteData {
-  id: string;
-  employer_name: string;
-  status: string;
-}
+type InviteState = "loading" | "valid" | "invalid" | "accepted";
 
 export default function InvitePage() {
   const params = useParams();
@@ -30,99 +32,104 @@ export default function InvitePage() {
   const token = params.token as string;
 
   const [state, setState] = useState<InviteState>("loading");
-  const [invite, setInvite] = useState<InviteData | null>(null);
+  const [employerName, setEmployerName] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [isAccepting, setIsAccepting] = useState(false);
 
-  const supabase = createClient();
+  // Form fields (collected before accepting)
+  const [name, setName] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Hydrate form from profile
+  useEffect(() => {
+    if (profile) {
+      if (profile.name) setName(profile.name);
+      if (profile.cpf) setCpf(maskCpf(profile.cpf));
+      if (profile.phone) setPhone(maskPhoneBr(profile.phone));
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (authLoading) return;
 
+    // Not authenticated → save token and go to login
     if (!user) {
-      // Save token and redirect to login
       sessionStorage.setItem("pending-invite-token", token);
       router.push("/login");
       return;
     }
 
+    // Load invite info via API (uses admin client, bypasses RLS)
+    let cancelled = false;
+    async function loadInvite() {
+      try {
+        const res = await fetch(`/api/invites/${token}`);
+        const data = await res.json();
+        if (cancelled) return;
+
+        if (!res.ok) {
+          setErrorMessage(data.error || "Convite inválido");
+          setState("invalid");
+          return;
+        }
+
+        setEmployerName(data.employer_name);
+        setState("valid");
+      } catch {
+        if (cancelled) return;
+        setErrorMessage("Erro ao carregar convite");
+        setState("invalid");
+      }
+    }
     loadInvite();
-  }, [user, authLoading, token]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading, token, router]);
 
-  async function loadInvite() {
-    const { data, error } = await supabase
-      .from("employer_invites")
-      .select("id, status, employer_id, expires_at")
-      .eq("token", token)
-      .single();
-
-    if (error || !data) {
-      setState("invalid");
-      return;
-    }
-
-    if (data.status !== "pending" || new Date(data.expires_at) < new Date()) {
-      setState("invalid");
-      return;
-    }
-
-    // Get employer name
-    const { data: employer } = await supabase
-      .from("profiles")
-      .select("name")
-      .eq("id", data.employer_id)
-      .single();
-
-    setInvite({
-      id: data.id,
-      employer_name: employer?.name || "Empregador",
-      status: data.status,
-    });
-    setState("valid");
+  function validate(): boolean {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = "Nome é obrigatório";
+    if (!cpf) errs.cpf = "CPF é obrigatório";
+    else if (!isValidCpf(cpf)) errs.cpf = "CPF inválido";
+    if (phone && !isValidPhoneBr(phone)) errs.phone = "Telefone inválido";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   }
 
   async function handleAccept() {
-    if (!invite || !profile) return;
+    if (!validate()) return;
     setIsAccepting(true);
 
-    // Link employee to employer
-    const { data: inviteData } = await supabase
-      .from("employer_invites")
-      .select("employer_id")
-      .eq("id", invite.id)
-      .single();
+    try {
+      const res = await fetch(`/api/invites/${token}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          cpf: cleanDigits(cpf),
+          phone: phone ? cleanDigits(phone) : null,
+        }),
+      });
+      const data = await res.json();
 
-    if (!inviteData) {
-      toast.error("Convite não encontrado");
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao aceitar convite");
+        setIsAccepting(false);
+        return;
+      }
+
+      setState("accepted");
+      toast.success("Convite aceito!");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
+    } catch {
+      toast.error("Erro de conexão");
       setIsAccepting(false);
-      return;
     }
-
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        employer_id: inviteData.employer_id,
-        role: "employee",
-        onboarding_completed: true,
-      })
-      .eq("id", profile.id);
-
-    if (profileError) {
-      toast.error("Erro ao aceitar convite");
-      setIsAccepting(false);
-      return;
-    }
-
-    // Mark invite as accepted
-    await supabase
-      .from("employer_invites")
-      .update({ status: "accepted" })
-      .eq("id", invite.id);
-
-    setState("accepted");
-    toast.success("Convite aceito!");
-    setIsAccepting(false);
-
-    setTimeout(() => router.push("/"), 1500);
   }
 
   if (state === "loading" || authLoading) {
@@ -142,7 +149,7 @@ export default function InvitePage() {
               <XCircle className="mx-auto h-12 w-12 text-destructive" />
               <CardTitle>Convite inválido</CardTitle>
               <CardDescription>
-                Este convite expirou ou já foi utilizado.
+                {errorMessage || "Este convite expirou ou já foi utilizado."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -153,16 +160,61 @@ export default function InvitePage() {
           </>
         )}
 
-        {state === "valid" && invite && (
+        {state === "valid" && (
           <>
             <CardHeader className="text-center">
               <CardTitle>Convite recebido</CardTitle>
               <CardDescription>
-                <strong>{invite.employer_name}</strong> convidou você para
-                registrar seu ponto pelo Ponto Casa.
+                <strong>{employerName}</strong> convidou você para registrar
+                seu ponto. Complete seus dados para aceitar.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Nome <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="Nome completo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                {errors.name && (
+                  <p className="text-xs text-destructive">{errors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpf">
+                  CPF <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cpf"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(maskCpf(e.target.value))}
+                  inputMode="numeric"
+                />
+                {errors.cpf && (
+                  <p className="text-xs text-destructive">{errors.cpf}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone (opcional)</Label>
+                <Input
+                  id="phone"
+                  placeholder="(11) 99999-9999"
+                  value={phone}
+                  onChange={(e) => setPhone(maskPhoneBr(e.target.value))}
+                  inputMode="tel"
+                />
+                {errors.phone && (
+                  <p className="text-xs text-destructive">{errors.phone}</p>
+                )}
+              </div>
+
               <Button
                 className="w-full"
                 onClick={handleAccept}
@@ -186,7 +238,7 @@ export default function InvitePage() {
             <CheckCircle className="mx-auto h-12 w-12 text-green-600" />
             <CardTitle>Convite aceito!</CardTitle>
             <CardDescription>
-              Você foi vinculado(a) a {invite?.employer_name}. Redirecionando...
+              Você foi vinculado(a) a {employerName}. Redirecionando...
             </CardDescription>
           </CardHeader>
         )}

@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -37,6 +36,7 @@ import {
   Timer,
   FileDown,
 } from "lucide-react";
+import { ClosingSkeleton } from "@/components/skeletons";
 
 interface Closing {
   id: string;
@@ -81,20 +81,14 @@ export default function FechamentoPage() {
 
   const isEmployer = profile?.role === "employer";
   const isEmployee = profile?.role === "employee";
-  const supabase = createClient();
-
   useEffect(() => {
-    if (!isEmployer || !profile) return;
+    if (!isEmployer) return;
     async function loadEmployees() {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .eq("employer_id", profile!.id)
-        .eq("is_active", true);
-      setEmployees(data || []);
+      const res = await fetch("/api/employees");
+      if (res.ok) setEmployees(await res.json());
     }
     loadEmployees();
-  }, [isEmployer, profile, supabase]);
+  }, [isEmployer]);
 
   const targetEmployeeId = isEmployer ? selectedEmployeeId : profile?.id;
 
@@ -106,16 +100,22 @@ export default function FechamentoPage() {
     }
 
     setIsLoading(true);
-    const { data } = await supabase
-      .from("monthly_closings")
-      .select("*")
-      .eq("employee_id", targetEmployeeId)
-      .eq("month_ref", currentMonth)
-      .single();
-
-    setClosing(data as Closing | null);
-    setIsLoading(false);
-  }, [currentMonth, targetEmployeeId, supabase]);
+    try {
+      const params = new URLSearchParams({ month: currentMonth });
+      if (isEmployer && targetEmployeeId) {
+        params.set("employee_id", targetEmployeeId);
+      }
+      const res = await fetch(`/api/closings?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClosing(data as Closing | null);
+      } else {
+        setClosing(null);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentMonth, targetEmployeeId, isEmployer]);
 
   useEffect(() => {
     fetchClosing();
@@ -266,9 +266,7 @@ export default function FechamentoPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <ClosingSkeleton />
       ) : !targetEmployeeId ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
           Selecione um funcionário para ver o fechamento

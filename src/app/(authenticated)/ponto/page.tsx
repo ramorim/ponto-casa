@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +28,7 @@ import {
   getEventLabel,
 } from "@/lib/time-entry-validation";
 import type { EventType } from "@/lib/time-entry-validation";
+import { PunchSkeleton } from "@/components/skeletons";
 
 interface TimeEntry {
   id: string;
@@ -51,6 +53,7 @@ const EVENT_COLORS: Record<EventType, string> = {
 
 export default function PontoPage() {
   const { profile } = useAuth();
+  const router = useRouter();
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [allowedEvents, setAllowedEvents] = useState<EventType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +61,95 @@ export default function PontoPage() {
   const [showNote, setShowNote] = useState(false);
   const [note, setNote] = useState("");
   const [serverTime, setServerTime] = useState<string>("");
+  const [capturingLocation, setCapturingLocation] = useState(false);
+
+  // Geolocation permission state. We do NOT cache coordinates client-side —
+  // every punch captures fresh in real time to prevent tampering.
+  const [permissionState, setPermissionState] = useState<
+    "granted" | "denied" | "prompt" | "unknown"
+  >("unknown");
+
+  // Probe permission state on mount and keep it updated.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions) {
+      setPermissionState("unknown");
+      return;
+    }
+
+    let cancelled = false;
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (cancelled) return;
+        permissionStatus = status;
+        setPermissionState(status.state as typeof permissionState);
+        status.onchange = () => {
+          setPermissionState(status.state as typeof permissionState);
+        };
+      })
+      .catch(() => {
+        if (!cancelled) setPermissionState("unknown");
+      });
+
+    return () => {
+      cancelled = true;
+      if (permissionStatus) permissionStatus.onchange = null;
+    };
+  }, []);
+
+  // Warm up the GPS so the first real-time capture is fast. The watcher
+  // does NOT store coordinates anywhere — it only keeps the GPS chip warm.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      () => {},
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  /**
+   * Captures coordinates in real time. Returns null if the user has denied
+   * permission. Throws if permission is granted but capture fails (callers
+   * should treat this as an error and abort the punch).
+   */
+  async function captureCoords(): Promise<{ lat: number; lng: number } | null> {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      return null;
+    }
+
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => {
+          // PERMISSION_DENIED → return null (allowed to punch without coords)
+          if (err.code === err.PERMISSION_DENIED) {
+            resolve(null);
+            return;
+          }
+          // POSITION_UNAVAILABLE / TIMEOUT → reject so caller can abort
+          reject(err);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 25000,
+        }
+      );
+    });
+  }
+
+  // Employers don't punch — redirect to employees page
+  useEffect(() => {
+    if (profile && profile.role === "employer") {
+      router.replace("/funcionarios");
+    }
+  }, [profile, router]);
 
   const fetchTodayEntries = useCallback(async () => {
     try {
@@ -99,22 +191,40 @@ export default function PontoPage() {
 
   async function handlePunch(eventType: EventType) {
     setPunchingType(eventType);
+    setCapturingLocation(true);
 
-    // Capture geolocation (optional, don't block)
     let latitude: number | undefined;
     let longitude: number | undefined;
 
+    // Capture coordinates in real time. If permission was granted but capture
+    // fails (timeout, GPS unavailable), abort the punch — we don't want to
+    // accept a punch with missing coords when the user agreed to share them.
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 5000,
-          maximumAge: 60000,
-        });
-      });
-      latitude = pos.coords.latitude;
-      longitude = pos.coords.longitude;
-    } catch {
-      // Geolocation denied or unavailable — proceed without it
+      const coords = await captureCoords();
+      if (coords) {
+        latitude = coords.lat;
+        longitude = coords.lng;
+      } else if (permissionState === "granted") {
+        // Permission says granted but we got null (shouldn't happen) → abort
+        toast.error("Não foi possível obter a localização. Tente novamente.");
+        setCapturingLocation(false);
+        setPunchingType(null);
+        return;
+      }
+    } catch (err) {
+      console.warn("Geolocation capture failed:", err);
+      // Permission was granted but the capture failed → block the punch
+      if (permissionState !== "denied") {
+        toast.error(
+          "Falha ao capturar localização. Verifique sua conexão GPS e tente novamente."
+        );
+        setCapturingLocation(false);
+        setPunchingType(null);
+        return;
+      }
+      // permission is "denied" → proceed without coords
+    } finally {
+      setCapturingLocation(false);
     }
 
     const deviceInfo = navigator.userAgent.slice(0, 200);
@@ -154,11 +264,7 @@ export default function PontoPage() {
   }
 
   if (isLoading) {
-    return (
-      <main className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </main>
-    );
+    return <PunchSkeleton />;
   }
 
   return (
@@ -203,7 +309,9 @@ export default function PontoPage() {
               ) : (
                 <span className="mr-2">{EVENT_ICONS[eventType]}</span>
               )}
-              {getEventLabel(eventType)}
+              {isPunching && capturingLocation
+                ? "Capturando localização..."
+                : getEventLabel(eventType)}
             </Button>
           );
         })}
@@ -273,9 +381,21 @@ export default function PontoPage() {
       )}
 
       {/* Geolocation hint */}
-      <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+      <p
+        className={`text-center text-xs flex items-center justify-center gap-1 ${
+          permissionState === "granted"
+            ? "text-green-700"
+            : permissionState === "denied"
+            ? "text-amber-700"
+            : "text-muted-foreground"
+        }`}
+      >
         <MapPin className="h-3 w-3" />
-        Localização capturada automaticamente (se permitido)
+        {permissionState === "granted"
+          ? "Localização será capturada em tempo real"
+          : permissionState === "denied"
+          ? "Localização bloqueada — pontos sem GPS"
+          : "Toque em um botão para permitir localização"}
       </p>
     </main>
   );

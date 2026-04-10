@@ -3,7 +3,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BottomNav } from "@/components/bottom-nav";
 
 export default function AuthenticatedLayout({
   children,
@@ -34,11 +35,18 @@ export default function AuthenticatedLayout({
 
   if (isLoading || !isAuthenticated) {
     return (
-      <main className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </main>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <div className="flex flex-1 flex-col pb-16">{children}</div>
+      <BottomNav />
+    </>
+  );
 }

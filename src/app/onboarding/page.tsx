@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,53 +12,105 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { Briefcase, User } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { Briefcase, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  cleanDigits,
+  isValidCpf,
+  isValidPhoneBr,
+  maskCpf,
+  maskPhoneBr,
+} from "@/lib/validation";
 
-type Step = "name" | "role" | "done";
+type Step = "info" | "role";
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { profile, refreshProfile } = useAuth();
-  const [step, setStep] = useState<Step>(profile?.name ? "role" : "name");
-  const [name, setName] = useState(profile?.name || "");
+  const { profile, isLoading: authLoading } = useAuth();
+  const [step, setStep] = useState<Step>("info");
+  const [name, setName] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const supabase = createClient();
+  // Hydrate from profile when it loads
+  useEffect(() => {
+    if (profile) {
+      if (profile.name) setName(profile.name);
+      if (profile.cpf) setCpf(maskCpf(profile.cpf));
+      if (profile.phone) setPhone(maskPhoneBr(profile.phone));
+    }
+  }, [profile]);
 
-  async function handleNameSubmit(e: React.FormEvent) {
+  // If there's a pending invite token, prioritize accepting it
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const pendingToken = sessionStorage.getItem("pending-invite-token");
+    if (pendingToken) {
+      sessionStorage.removeItem("pending-invite-token");
+      window.location.href = `/convite/${pendingToken}`;
+    }
+  }, []);
+
+  // If onboarding already completed, leave
+  useEffect(() => {
+    if (profile?.onboarding_completed) {
+      window.location.href = profile.role === "employer" ? "/funcionarios" : "/";
+    }
+  }, [profile]);
+
+  function validateInfo(): boolean {
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = "Nome é obrigatório";
+    if (!cpf) errs.cpf = "CPF é obrigatório";
+    else if (!isValidCpf(cpf)) errs.cpf = "CPF inválido";
+    if (phone && !isValidPhoneBr(phone)) errs.phone = "Telefone inválido";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function handleInfoSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!validateInfo()) return;
     setStep("role");
   }
 
   async function handleRoleSelect(role: "employer" | "employee") {
     setIsLoading(true);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        name: name.trim(),
-        role,
-        onboarding_completed: true,
-      })
-      .eq("id", profile?.id);
+    try {
+      const res = await fetch("/api/profile/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          cpf: cleanDigits(cpf),
+          phone: phone ? cleanDigits(phone) : null,
+          role,
+        }),
+      });
 
-    if (error) {
-      toast.error("Erro ao salvar perfil");
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao salvar");
+        setIsLoading(false);
+        return;
+      }
+
+      window.location.href = role === "employer" ? "/funcionarios" : "/";
+    } catch (err) {
+      console.error("onboarding error:", err);
+      toast.error("Erro de conexão");
       setIsLoading(false);
-      return;
     }
+  }
 
-    await refreshProfile();
-    setIsLoading(false);
-
-    if (role === "employer") {
-      router.push("/funcionarios");
-    } else {
-      router.push("/");
-    }
+  if (authLoading || !profile) {
+    return (
+      <main className="flex flex-1 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </main>
+    );
   }
 
   return (
@@ -68,16 +119,18 @@ export default function OnboardingPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Bem-vindo ao Ponto Casa</CardTitle>
           <CardDescription>
-            {step === "name"
-              ? "Como podemos te chamar?"
+            {step === "info"
+              ? "Conte um pouco sobre você"
               : "Qual é o seu perfil?"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === "name" && (
-            <form onSubmit={handleNameSubmit} className="space-y-4">
+          {step === "info" && (
+            <form onSubmit={handleInfoSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Seu nome</Label>
+                <Label htmlFor="name">
+                  Nome <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="name"
                   placeholder="Nome completo"
@@ -86,8 +139,43 @@ export default function OnboardingPage() {
                   required
                   autoFocus
                 />
+                {errors.name && (
+                  <p className="text-xs text-destructive">{errors.name}</p>
+                )}
               </div>
-              <Button type="submit" className="w-full" disabled={!name.trim()}>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpf">
+                  CPF <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cpf"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(maskCpf(e.target.value))}
+                  inputMode="numeric"
+                  required
+                />
+                {errors.cpf && (
+                  <p className="text-xs text-destructive">{errors.cpf}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone (opcional)</Label>
+                <Input
+                  id="phone"
+                  placeholder="(11) 99999-9999"
+                  value={phone}
+                  onChange={(e) => setPhone(maskPhoneBr(e.target.value))}
+                  inputMode="tel"
+                />
+                {errors.phone && (
+                  <p className="text-xs text-destructive">{errors.phone}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full">
                 Continuar
               </Button>
             </form>
@@ -101,7 +189,11 @@ export default function OnboardingPage() {
                 onClick={() => handleRoleSelect("employer")}
                 disabled={isLoading}
               >
-                <Briefcase className="h-8 w-8 text-primary" />
+                {isLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                ) : (
+                  <Briefcase className="h-8 w-8 text-primary" />
+                )}
                 <div className="text-left">
                   <p className="font-semibold">Sou Empregador(a)</p>
                   <p className="text-sm text-muted-foreground">
@@ -116,7 +208,11 @@ export default function OnboardingPage() {
                 onClick={() => handleRoleSelect("employee")}
                 disabled={isLoading}
               >
-                <User className="h-8 w-8 text-primary" />
+                {isLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                ) : (
+                  <User className="h-8 w-8 text-primary" />
+                )}
                 <div className="text-left">
                   <p className="font-semibold">Sou Funcionário(a)</p>
                   <p className="text-sm text-muted-foreground">
@@ -128,7 +224,7 @@ export default function OnboardingPage() {
               <Button
                 variant="ghost"
                 className="w-full"
-                onClick={() => setStep("name")}
+                onClick={() => setStep("info")}
                 disabled={isLoading}
               >
                 Voltar

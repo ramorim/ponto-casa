@@ -1,16 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
   UserPlus,
@@ -20,12 +18,17 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Timer,
 } from "lucide-react";
+import { ListSkeleton } from "@/components/skeletons";
+import { WorkScheduleDialog } from "@/components/work-schedule-dialog";
 
 interface Employee {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
+  cpf: string | null;
   is_active: boolean;
 }
 
@@ -49,85 +52,57 @@ interface ConnectionRequest {
 }
 
 export default function FuncionariosPage() {
-  const { profile } = useAuth();
+  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [requests, setRequests] = useState<ConnectionRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreatingInvite, setIsCreatingInvite] = useState(false);
-
-  const supabase = createClient();
+  const [scheduleEmployee, setScheduleEmployee] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
-    if (!profile) return;
+    try {
+      const [empsRes, invsRes, reqsRes] = await Promise.all([
+        fetch("/api/employees"),
+        fetch("/api/invites?status=pending"),
+        fetch("/api/connection-requests?status=pending"),
+      ]);
 
-    // Load employees
-    const { data: emps } = await supabase
-      .from("profiles")
-      .select("id, name, phone, is_active")
-      .eq("employer_id", profile.id);
-    setEmployees(emps || []);
-
-    // Load pending invites
-    const { data: invs } = await supabase
-      .from("employer_invites")
-      .select("*")
-      .eq("employer_id", profile.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-    setInvites(invs || []);
-
-    // Load pending connection requests
-    const { data: reqs } = await supabase
-      .from("connection_requests")
-      .select("id, employee_id, status, message, created_at")
-      .eq("employer_id", profile.id)
-      .eq("status", "pending");
-
-    if (reqs && reqs.length > 0) {
-      const employeeIds = reqs.map((r) => r.employee_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, name, phone")
-        .in("id", employeeIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-      setRequests(
-        reqs.map((r) => ({
-          ...r,
-          employee_name: profileMap.get(r.employee_id)?.name || "",
-          employee_phone: profileMap.get(r.employee_id)?.phone || "",
-        }))
-      );
-    } else {
-      setRequests([]);
+      if (empsRes.ok) setEmployees(await empsRes.json());
+      if (invsRes.ok) setInvites(await invsRes.json());
+      if (reqsRes.ok) setRequests(await reqsRes.json());
+    } catch (err) {
+      console.error("loadData error:", err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [profile, supabase]);
+  }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   async function createInvite() {
-    if (!profile) return;
     setIsCreatingInvite(true);
-
-    const { data, error } = await supabase
-      .from("employer_invites")
-      .insert({ employer_id: profile.id })
-      .select("token")
-      .single();
-
-    if (error || !data) {
-      toast.error("Erro ao criar convite");
+    try {
+      const res = await fetch("/api/invites", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao criar convite");
+        return;
+      }
+      const inviteUrl = `${window.location.origin}/convite/${data.token}`;
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Link copiado!");
+      loadData();
+    } catch {
+      toast.error("Erro de conexão");
+    } finally {
       setIsCreatingInvite(false);
-      return;
     }
-
-    const inviteUrl = `${window.location.origin}/convite/${data.token}`;
-    await navigator.clipboard.writeText(inviteUrl);
-    toast.success("Link copiado!");
-    setIsCreatingInvite(false);
-    loadData();
   }
 
   function shareViaWhatsApp(token: string) {
@@ -144,34 +119,41 @@ export default function FuncionariosPage() {
     toast.success("Link copiado!");
   }
 
-  async function handleRequest(requestId: string, action: "accepted" | "rejected") {
-    const request = requests.find((r) => r.id === requestId);
-    if (!request || !profile) return;
-
-    if (action === "accepted") {
-      // Link employee to this employer
-      await supabase
-        .from("profiles")
-        .update({ employer_id: profile.id })
-        .eq("id", request.employee_id);
+  async function handleRequest(
+    requestId: string,
+    action: "accepted" | "rejected"
+  ) {
+    const res = await fetch(`/api/connection-requests/${requestId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      toast.error(data.error || "Erro");
+      return;
     }
-
-    await supabase
-      .from("connection_requests")
-      .update({ status: action })
-      .eq("id", requestId);
-
     toast.success(action === "accepted" ? "Solicitação aceita" : "Solicitação recusada");
     loadData();
   }
 
-  async function revokeInvite(inviteId: string) {
-    await supabase
-      .from("employer_invites")
-      .update({ status: "revoked" })
-      .eq("id", inviteId);
+  async function revokeInvite(token: string) {
+    const res = await fetch(`/api/invites/${token}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Erro ao revogar");
+      return;
+    }
     toast.success("Convite revogado");
     loadData();
+  }
+
+  if (isLoading) {
+    return (
+      <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
+        <h1 className="text-xl font-bold">Funcionários</h1>
+        <ListSkeleton count={3} />
+      </main>
+    );
   }
 
   return (
@@ -245,21 +227,43 @@ export default function FuncionariosPage() {
               {employees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div>
-                    <p className="font-medium">{emp.name}</p>
-                    <p className="text-sm text-muted-foreground">{emp.phone}</p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      emp.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}
+                  <button
+                    type="button"
+                    className="flex-1 text-left min-w-0"
+                    onClick={() => router.push(`/historico?employee_id=${emp.id}`)}
                   >
-                    {emp.is_active ? "Ativo" : "Inativo"}
-                  </span>
+                    <p className="font-medium truncate">{emp.name || "Sem nome"}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {emp.phone || emp.email || "—"}
+                    </p>
+                  </button>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Definir horário de trabalho"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setScheduleEmployee({
+                          id: emp.id,
+                          name: emp.name || "Funcionário(a)",
+                        });
+                      }}
+                    >
+                      <Timer className="h-4 w-4" />
+                    </Button>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        emp.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {emp.is_active ? "Ativo" : "Inativo"}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -305,7 +309,7 @@ export default function FuncionariosPage() {
                     size="sm"
                     variant="ghost"
                     className="text-destructive"
-                    onClick={() => revokeInvite(inv.id)}
+                    onClick={() => revokeInvite(inv.token)}
                   >
                     <XCircle className="h-4 w-4" />
                   </Button>
@@ -314,6 +318,16 @@ export default function FuncionariosPage() {
             ))}
           </CardContent>
         </Card>
+      )}
+
+      {/* Work schedule dialog */}
+      {scheduleEmployee && (
+        <WorkScheduleDialog
+          open={true}
+          onClose={() => setScheduleEmployee(null)}
+          employeeId={scheduleEmployee.id}
+          employeeName={scheduleEmployee.name}
+        />
       )}
     </main>
   );

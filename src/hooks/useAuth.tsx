@@ -7,21 +7,26 @@ import {
   useEffect,
   useState,
 } from "react";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 import { registerDevice } from "@/services/devices";
+
+interface User {
+  id: string;
+  email: string | null;
+}
 
 interface Profile {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
+  cpf: string | null;
   role: "employer" | "employee" | null;
   employer_id: string | null;
   is_active: boolean;
   onboarding_completed: boolean;
 }
 
-interface AuthContext {
+interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
@@ -38,59 +43,46 @@ interface AuthContext {
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContext | null>(null);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const supabase = createClient();
-
-  const fetchProfile = useCallback(
-    async (userId: string) => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      setProfile(data as Profile | null);
-    },
-    [supabase]
-  );
-
-  const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user.id);
-  }, [user, fetchProfile]);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        await fetchProfile(currentUser.id);
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          registerDevice().catch(console.error);
-        }
+  const fetchMe = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setProfile(data.profile);
       } else {
+        setUser(null);
         setProfile(null);
       }
-
+    } catch {
+      setUser(null);
+      setProfile(null);
+    } finally {
       setIsLoading(false);
-    });
+    }
+  }, []);
 
-    // Initial session check
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      setUser(u);
-      if (u) fetchProfile(u.id);
-      setIsLoading(false);
-    });
+  const refreshProfile = useCallback(async () => {
+    await fetchMe();
+  }, [fetchMe]);
 
-    return () => subscription.unsubscribe();
-  }, [supabase, fetchProfile]);
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
+
+  // Register device on first authentication
+  useEffect(() => {
+    if (user) {
+      registerDevice().catch(console.error);
+    }
+  }, [user]);
 
   const sendOtp = useCallback(
     async (phoneOrEmail: string, type: "whatsapp" | "email") => {
@@ -99,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneOrEmail, type }),
       });
-
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error };
       return { success: true };
@@ -114,27 +105,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneOrEmail, code }),
       });
-
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error };
-
-      // Use the token_hash to verify and establish session
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: data.token_hash,
-        type: "magiclink",
-      });
-
-      if (error) return { success: false, error: error.message };
       return { success: true };
     },
-    [supabase]
+    []
   );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setProfile(null);
-  }, [supabase]);
+  }, []);
 
   return (
     <AuthContext.Provider
