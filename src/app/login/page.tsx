@@ -129,6 +129,7 @@ function formatPhoneInput(value: string): string {
 }
 
 function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  return `+55${digits}`;
+  // Send only the 11 digits (DDD + number), without country code.
+  // The +55 is added only by zapi.ts at send time.
+  return value.replace(/\D/g, "");
 }
