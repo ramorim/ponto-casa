@@ -14,10 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, cpf, phone, role } = body as {
+    const { name, cpf, phone, email, role } = body as {
       name?: string;
       cpf?: string;
       phone?: string | null;
+      email?: string | null;
       role?: "employer" | "employee";
     };
 
@@ -33,12 +34,29 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
 
+    // If user signed up via WhatsApp (synthetic email), update auth.users email
+    // to the real email provided in onboarding.
+    const hasSyntheticEmail = user.email?.endsWith("@pontocasa.app");
+    if (hasSyntheticEmail && email?.trim()) {
+      const { error: emailUpdateError } =
+        await admin.auth.admin.updateUserById(user.id, {
+          email: email.trim(),
+          email_confirm: true,
+        });
+
+      if (emailUpdateError) {
+        console.error("Auth email update error:", emailUpdateError);
+        // Don't block onboarding if email update fails, just log
+      }
+    }
+
     const { error } = await admin
       .from("profiles")
       .update({
         name: name.trim(),
         cpf,
         phone: phone || null,
+        email: email?.trim() || (hasSyntheticEmail ? null : user.email),
         role,
         onboarding_completed: true,
       })

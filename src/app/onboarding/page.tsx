@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import {
   cleanDigits,
   isValidCpf,
+  isValidEmail,
   isValidPhoneBr,
   maskCpf,
   maskPhoneBr,
@@ -30,8 +31,12 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Detect if user signed up via WhatsApp (synthetic email = no real email)
+  const signedUpViaPhone = profile?.email?.endsWith("@pontocasa.app") ?? false;
 
   // Hydrate from profile when it loads
   useEffect(() => {
@@ -39,6 +44,9 @@ export default function OnboardingPage() {
       if (profile.name) setName(profile.name);
       if (profile.cpf) setCpf(maskCpf(profile.cpf));
       if (profile.phone) setPhone(maskPhoneBr(profile.phone));
+      if (profile.email && !profile.email.endsWith("@pontocasa.app")) {
+        setEmail(profile.email);
+      }
     }
   }, [profile]);
 
@@ -65,6 +73,8 @@ export default function OnboardingPage() {
     if (!cpf) errs.cpf = "CPF é obrigatório";
     else if (!isValidCpf(cpf)) errs.cpf = "CPF inválido";
     if (phone && !isValidPhoneBr(phone)) errs.phone = "Telefone inválido";
+    if (signedUpViaPhone && !email.trim()) errs.email = "Email é obrigatório";
+    else if (email && !isValidEmail(email)) errs.email = "Email inválido";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -86,6 +96,7 @@ export default function OnboardingPage() {
           name: name.trim(),
           cpf: cleanDigits(cpf),
           phone: phone ? cleanDigits(phone) : null,
+          email: email.trim() || null,
           role,
         }),
       });
@@ -162,7 +173,9 @@ export default function OnboardingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone (opcional)</Label>
+                <Label htmlFor="phone">
+                  Telefone {!signedUpViaPhone && "(opcional)"}
+                </Label>
                 <Input
                   id="phone"
                   placeholder="(11) 99999-9999"
@@ -172,6 +185,27 @@ export default function OnboardingPage() {
                 />
                 {errors.phone && (
                   <p className="text-xs text-destructive">{errors.phone}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  Email{" "}
+                  {signedUpViaPhone ? (
+                    <span className="text-destructive">*</span>
+                  ) : (
+                    "(opcional)"
+                  )}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                {errors.email && (
+                  <p className="text-xs text-destructive">{errors.email}</p>
                 )}
               </div>
 
