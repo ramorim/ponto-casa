@@ -2,18 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageCircle, Mail } from "lucide-react";
+import { MessageCircle, Mail, ArrowRight, Loader2 } from "lucide-react";
 
 type AuthType = "whatsapp" | "email";
 
@@ -30,7 +24,8 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    const value = authType === "whatsapp" ? formatPhone(phoneOrEmail) : phoneOrEmail;
+    const value =
+      authType === "whatsapp" ? formatPhone(phoneOrEmail) : phoneOrEmail;
     const result = await sendOtp(value, authType);
 
     setIsLoading(false);
@@ -47,54 +42,92 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Ponto Casa</CardTitle>
-          <CardDescription>
-            Entre com seu{" "}
-            {authType === "whatsapp" ? "WhatsApp" : "email"} para acessar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex gap-2">
-            <Button
-              variant={authType === "whatsapp" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => setAuthType("whatsapp")}
+    <main className="flex flex-1 flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-white">
+      <div className="w-full max-w-sm space-y-8">
+        {/* Logo + branding */}
+        <div className="text-center space-y-3">
+          <Image
+            src="/icons/logo.svg"
+            alt="Ponto Casa"
+            width={72}
+            height={72}
+            className="mx-auto"
+            priority
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Ponto Casa</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Controle de jornada doméstica
+            </p>
+          </div>
+        </div>
+
+        {/* Login card */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5">
+          {/* Auth type toggle */}
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
+            <button
               type="button"
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                authType === "whatsapp"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setAuthType("whatsapp");
+                setPhoneOrEmail("");
+                setError("");
+              }}
             >
-              <MessageCircle className="mr-2 h-4 w-4" />
+              <MessageCircle className="h-4 w-4" />
               WhatsApp
-            </Button>
-            <Button
-              variant={authType === "email" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => setAuthType("email")}
+            </button>
+            <button
               type="button"
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                authType === "email"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => {
+                setAuthType("email");
+                setPhoneOrEmail("");
+                setError("");
+              }}
             >
-              <Mail className="mr-2 h-4 w-4" />
+              <Mail className="h-4 w-4" />
               Email
-            </Button>
+            </button>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSendOtp} className="space-y-4">
             {authType === "whatsapp" ? (
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone" className="text-gray-700">
+                  Telefone
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
                   placeholder="(11) 99999-9999"
                   value={phoneOrEmail}
-                  onChange={(e) => setPhoneOrEmail(formatPhoneInput(e.target.value))}
+                  onChange={(e) =>
+                    setPhoneOrEmail(formatPhoneInput(e.target.value))
+                  }
                   required
                   autoFocus
+                  className="h-12 text-base"
                 />
+                <p className="text-xs text-gray-400">
+                  Você receberá um código de 6 dígitos no WhatsApp
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-700">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -103,20 +136,41 @@ export default function LoginPage() {
                   onChange={(e) => setPhoneOrEmail(e.target.value)}
                   required
                   autoFocus
+                  className="h-12 text-base"
                 />
+                <p className="text-xs text-gray-400">
+                  Você receberá um código de 6 dígitos no email
+                </p>
               </div>
             )}
 
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold bg-blue-700 hover:bg-blue-800"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <ArrowRight className="mr-2 h-5 w-5" />
+              )}
               {isLoading ? "Enviando..." : "Enviar código"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-gray-400">
+          Ao continuar, você concorda com os termos de uso
+          e política de privacidade.
+        </p>
+      </div>
     </main>
   );
 }
@@ -129,7 +183,5 @@ function formatPhoneInput(value: string): string {
 }
 
 function formatPhone(value: string): string {
-  // Send only the 11 digits (DDD + number), without country code.
-  // The +55 is added only by zapi.ts at send time.
   return value.replace(/\D/g, "");
 }

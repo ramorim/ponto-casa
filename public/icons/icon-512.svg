@@ -1,4 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#1e40af"/>
-  <text x="256" y="290" font-family="Arial,sans-serif" font-size="128" font-weight="bold" fill="white" text-anchor="middle">PC</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="108" fill="#1e40af" />
+  <path d="M256 96L96 213h44v182h232V213h44L256 96z" fill="white" opacity="0.15" />
+  <circle cx="256" cy="278" r="96" fill="white" />
+  <line x1="256" y1="278" x2="256" y2="214" stroke="#1e40af" stroke-width="12" stroke-linecap="round" />
+  <line x1="256" y1="278" x2="304" y2="278" stroke="#1e40af" stroke-width="12" stroke-linecap="round" />
+  <circle cx="256" cy="278" r="9" fill="#1e40af" />
+  <line x1="256" y1="190" x2="256" y2="200" stroke="#1e40af" stroke-width="5" stroke-linecap="round" />
+  <line x1="256" y1="356" x2="256" y2="366" stroke="#1e40af" stroke-width="5" stroke-linecap="round" />
+  <line x1="168" y1="278" x2="178" y2="278" stroke="#1e40af" stroke-width="5" stroke-linecap="round" />
+  <line x1="334" y1="278" x2="344" y2="278" stroke="#1e40af" stroke-width="5" stroke-linecap="round" />
 </svg>

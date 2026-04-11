@@ -4,13 +4,6 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
@@ -126,17 +119,18 @@ function VerifyOtpContent() {
       : phoneOrEmail;
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">Verificar código</CardTitle>
-          <CardDescription>
+    <main className="flex flex-1 flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-white">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-bold text-gray-900">Verificar código</h1>
+          <p className="text-sm text-gray-500">
             Enviamos um código para{" "}
-            <strong>{displayContact}</strong>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-center gap-2" onPaste={handlePaste}>
+            <strong className="text-gray-700">{displayContact}</strong>
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5">
+          <div className="flex justify-center gap-2.5" onPaste={handlePaste}>
             {digits.map((digit, i) => (
               <Input
                 key={i}
@@ -147,7 +141,7 @@ function VerifyOtpContent() {
                 value={digit}
                 onChange={(e) => handleDigitChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                className="h-12 w-12 text-center text-lg font-bold"
+                className="h-14 w-12 text-center text-xl font-bold rounded-xl"
                 disabled={isLoading}
                 autoFocus={i === 0}
               />
@@ -155,22 +149,25 @@ function VerifyOtpContent() {
           </div>
 
           {error && (
-            <p className="text-center text-sm text-destructive">{error}</p>
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+              <p className="text-sm text-red-700 text-center">{error}</p>
+            </div>
           )}
 
           {isLoading && (
-            <p className="text-center text-sm text-muted-foreground">
-              Verificando...
-            </p>
+            <div className="flex items-center justify-center gap-2 text-blue-700">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <p className="text-sm font-medium">Verificando...</p>
+            </div>
           )}
 
           <div className="text-center">
             {resendTimer > 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-400">
                 Reenviar em {resendTimer}s
               </p>
             ) : (
-              <Button variant="ghost" onClick={handleResend} className="text-sm">
+              <Button variant="ghost" onClick={handleResend} className="text-sm text-blue-700">
                 Reenviar código
               </Button>
             )}
@@ -178,13 +175,13 @@ function VerifyOtpContent() {
 
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full h-11"
             onClick={() => router.back()}
           >
             Voltar
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }
