@@ -122,7 +122,7 @@ function VerifyOtpContent() {
 
   const displayContact =
     type === "whatsapp"
-      ? phoneOrEmail.replace("+55", "(").replace(/(\d{2})(\d{5})(\d{4})/, "$1) $2-$3")
+      ? phoneOrEmail.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
       : phoneOrEmail;
 
   return (
