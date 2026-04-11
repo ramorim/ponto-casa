@@ -58,32 +58,76 @@ export async function POST(request: NextRequest) {
       .update({ verified: true })
       .eq("id", otpRecord.id);
 
-    // Determine the auth email: real email or synthetic for phone users
+    // Determine the auth email to use for login.
+    // Priority: if a profile already exists with this phone or email, reuse that
+    // user (so the same person logging in via WhatsApp and Email gets the same account).
     const isEmail = phoneOrEmail.includes("@");
-    const authEmail = isEmail
-      ? phoneOrEmail
-      : `${phoneOrEmail.replace(/\D/g, "")}@pontocasa.app`;
+    const phoneDigits = isEmail ? null : phoneOrEmail.replace(/\D/g, "");
+    let authEmail: string;
 
-    // Find or create user
-    const { data: usersList } = await admin.auth.admin.listUsers();
-    const existingUser = usersList?.users?.find((u) => u.email === authEmail);
+    // Check if there's an existing profile with this phone or email
+    let existingProfile: { id: string } | null = null;
 
-    if (!existingUser) {
-      const { error: createError } = await admin.auth.admin.createUser({
-        email: authEmail,
-        password: crypto.randomUUID(),
-        email_confirm: true,
-        user_metadata: {
-          phone: isEmail ? undefined : phoneOrEmail,
-        },
-      });
+    if (isEmail) {
+      const { data } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("email", phoneOrEmail)
+        .maybeSingle();
+      existingProfile = data;
+    } else {
+      // Try matching by phone (with or without country code)
+      const { data } = await admin
+        .from("profiles")
+        .select("id")
+        .or(`phone.eq.${phoneDigits},phone.eq.${phoneDigits!.replace(/^55/, "")}`)
+        .maybeSingle();
+      existingProfile = data;
+    }
 
-      if (createError) {
-        console.error("Error creating user:", createError);
-        return NextResponse.json(
-          { error: "Erro ao criar conta" },
-          { status: 500 }
-        );
+    if (existingProfile) {
+      // Reuse the existing user — get their auth email
+      const { data: existingAuthUser } =
+        await admin.auth.admin.getUserById(existingProfile.id);
+      authEmail = existingAuthUser?.user?.email || (isEmail
+        ? phoneOrEmail
+        : `${phoneDigits}@pontocasa.app`);
+
+      // Update the profile phone if logging in via WhatsApp and phone wasn't set
+      if (!isEmail && phoneDigits) {
+        await admin
+          .from("profiles")
+          .update({ phone: phoneDigits })
+          .eq("id", existingProfile.id)
+          .is("phone", null);
+      }
+    } else {
+      // No existing profile — default auth email
+      authEmail = isEmail
+        ? phoneOrEmail
+        : `${phoneDigits}@pontocasa.app`;
+
+      // Find or create auth user
+      const { data: usersList } = await admin.auth.admin.listUsers();
+      const existingUser = usersList?.users?.find((u) => u.email === authEmail);
+
+      if (!existingUser) {
+        const { error: createError } = await admin.auth.admin.createUser({
+          email: authEmail,
+          password: crypto.randomUUID(),
+          email_confirm: true,
+          user_metadata: {
+            phone: isEmail ? undefined : phoneOrEmail,
+          },
+        });
+
+        if (createError) {
+          console.error("Error creating user:", createError);
+          return NextResponse.json(
+            { error: "Erro ao criar conta" },
+            { status: 500 }
+          );
+        }
       }
     }
 
