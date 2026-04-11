@@ -4,14 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 import { Briefcase, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -118,32 +112,38 @@ export default function OnboardingPage() {
 
   if (authLoading || !profile) {
     return (
-      <main className="flex flex-1 items-center justify-center">
+      <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-blue-50 to-white">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Bem-vindo ao Ponto Casa</CardTitle>
-          <CardDescription>
-            {step === "info"
-              ? "Conte um pouco sobre você"
-              : "Qual é o seu perfil?"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <main className="flex flex-1 flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-white">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="flex justify-center">
+          <Image src="/icons/logo.svg" alt="Ponto Casa" width={48} height={48} />
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border p-6">
+          <div className="text-center mb-6">
+            <h1 className="text-xl font-bold text-gray-900">Bem-vindo ao Ponto Casa</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {step === "info"
+                ? "Conte um pouco sobre você"
+                : "Qual é o seu perfil?"}
+            </p>
+          </div>
+
           {step === "info" && (
             <form onSubmit={handleInfoSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">
+                <Label htmlFor="name" className="text-gray-700">
                   Nome <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
+                  className="h-12 text-base"
                   placeholder="Nome completo"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -151,16 +151,19 @@ export default function OnboardingPage() {
                   autoFocus
                 />
                 {errors.name && (
-                  <p className="text-xs text-destructive">{errors.name}</p>
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                    <p className="text-sm text-red-700">{errors.name}</p>
+                  </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cpf">
+                <Label htmlFor="cpf" className="text-gray-700">
                   CPF <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="cpf"
+                  className="h-12 text-base"
                   placeholder="000.000.000-00"
                   value={cpf}
                   onChange={(e) => setCpf(maskCpf(e.target.value))}
@@ -168,28 +171,33 @@ export default function OnboardingPage() {
                   required
                 />
                 {errors.cpf && (
-                  <p className="text-xs text-destructive">{errors.cpf}</p>
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                    <p className="text-sm text-red-700">{errors.cpf}</p>
+                  </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">
+                <Label htmlFor="phone" className="text-gray-700">
                   Telefone {!signedUpViaPhone && "(opcional)"}
                 </Label>
                 <Input
                   id="phone"
+                  className="h-12 text-base"
                   placeholder="(11) 99999-9999"
                   value={phone}
                   onChange={(e) => setPhone(maskPhoneBr(e.target.value))}
                   inputMode="tel"
                 />
                 {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone}</p>
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                    <p className="text-sm text-red-700">{errors.phone}</p>
+                  </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">
+                <Label htmlFor="email" className="text-gray-700">
                   Email{" "}
                   {signedUpViaPhone ? (
                     <span className="text-destructive">*</span>
@@ -199,17 +207,20 @@ export default function OnboardingPage() {
                 </Label>
                 <Input
                   id="email"
+                  className="h-12 text-base"
                   type="email"
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                    <p className="text-sm text-red-700">{errors.email}</p>
+                  </div>
                 )}
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-12 text-base font-semibold">
                 Continuar
               </Button>
             </form>
@@ -219,18 +230,18 @@ export default function OnboardingPage() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="flex h-20 w-full items-center justify-start gap-4 p-4"
+                className="flex h-20 w-full items-center justify-start gap-4 p-4 rounded-2xl"
                 onClick={() => handleRoleSelect("employer")}
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-700" />
                 ) : (
-                  <Briefcase className="h-8 w-8 text-primary" />
+                  <Briefcase className="h-8 w-8 text-blue-700" />
                 )}
                 <div className="text-left">
-                  <p className="font-semibold">Sou Empregador(a)</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-semibold text-gray-900">Sou Empregador(a)</p>
+                  <p className="text-sm text-gray-500">
                     Quero gerenciar o ponto dos meus funcionários
                   </p>
                 </div>
@@ -238,18 +249,18 @@ export default function OnboardingPage() {
 
               <Button
                 variant="outline"
-                className="flex h-20 w-full items-center justify-start gap-4 p-4"
+                className="flex h-20 w-full items-center justify-start gap-4 p-4 rounded-2xl"
                 onClick={() => handleRoleSelect("employee")}
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-700" />
                 ) : (
-                  <User className="h-8 w-8 text-primary" />
+                  <User className="h-8 w-8 text-blue-700" />
                 )}
                 <div className="text-left">
-                  <p className="font-semibold">Sou Funcionário(a)</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-semibold text-gray-900">Sou Funcionário(a)</p>
+                  <p className="text-sm text-gray-500">
                     Quero registrar meu ponto diário
                   </p>
                 </div>
@@ -265,8 +276,8 @@ export default function OnboardingPage() {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }

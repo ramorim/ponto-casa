@@ -4,12 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
@@ -268,17 +262,17 @@ export default function PontoPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
       {/* Header with time */}
       <div className="text-center space-y-1">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-500">
           Olá, {profile?.name || "Funcionário"}
         </p>
         <div className="flex items-center justify-center gap-2">
-          <Clock className="h-5 w-5 text-muted-foreground" />
-          <span className="text-3xl font-bold tabular-nums">{serverTime}</span>
+          <Clock className="h-5 w-5 text-gray-500" />
+          <span className="text-3xl font-bold tabular-nums text-gray-900">{serverTime}</span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-500">
           {new Date().toLocaleDateString("pt-BR", {
             timeZone: "America/Sao_Paulo",
             weekday: "long",
@@ -297,7 +291,7 @@ export default function PontoPage() {
           return (
             <Button
               key={eventType}
-              className={`h-16 text-lg font-semibold ${
+              className={`h-16 text-lg font-semibold rounded-2xl ${
                 isAllowed ? EVENT_COLORS[eventType] : ""
               }`}
               variant={isAllowed ? "default" : "outline"}
@@ -321,7 +315,7 @@ export default function PontoPage() {
       <div>
         <button
           type="button"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 text-sm text-gray-500 hover:text-foreground transition-colors"
           onClick={() => setShowNote(!showNote)}
         >
           <ChevronDown
@@ -331,7 +325,7 @@ export default function PontoPage() {
         </button>
         {showNote && (
           <Input
-            className="mt-2"
+            className="mt-2 h-12 text-base"
             placeholder="Observação opcional (max 200 caracteres)"
             maxLength={200}
             value={note}
@@ -342,28 +336,28 @@ export default function PontoPage() {
 
       {/* Today's entries */}
       {entries.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-sm border">
+          <div className="px-4 pt-4 pb-2">
+            <h2 className="text-base font-semibold text-gray-900">
               Registros de hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <div className="px-4 pb-4">
             <div className="space-y-2">
               {entries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-center justify-between rounded-md border px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">
+                    <span className="text-gray-500">
                       {EVENT_ICONS[entry.event_type]}
                     </span>
-                    <span className="font-medium">
+                    <span className="font-medium text-gray-900">
                       {getEventLabel(entry.event_type)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
                     {entry.note && (
                       <span className="max-w-[100px] truncate text-xs italic">
                         {entry.note}
@@ -376,8 +370,8 @@ export default function PontoPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Geolocation hint */}
@@ -387,7 +381,7 @@ export default function PontoPage() {
             ? "text-green-700"
             : permissionState === "denied"
             ? "text-amber-700"
-            : "text-muted-foreground"
+            : "text-gray-500"
         }`}
       >
         <MapPin className="h-3 w-3" />

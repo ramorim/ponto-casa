@@ -2,13 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -237,13 +230,13 @@ export default function FechamentoPage() {
   const monthLabel = formatMonthLabel(currentMonth);
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
       {/* Month selector */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-semibold capitalize">{monthLabel}</h1>
+        <h1 className="text-xl font-bold text-gray-900 capitalize">{monthLabel}</h1>
         <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)}>
           <ChevronRight className="h-5 w-5" />
         </Button>
@@ -252,7 +245,7 @@ export default function FechamentoPage() {
       {/* Employee selector (employer) */}
       {isEmployer && employees.length > 0 && (
         <select
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          className="w-full rounded-lg border bg-white px-3 py-2 h-12 text-base"
           value={selectedEmployeeId || ""}
           onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
         >
@@ -268,17 +261,17 @@ export default function FechamentoPage() {
       {isLoading ? (
         <ClosingSkeleton />
       ) : !targetEmployeeId ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
+        <p className="py-12 text-center text-sm text-gray-500">
           Selecione um funcionário para ver o fechamento
         </p>
       ) : !closing ? (
-        <Card>
-          <CardContent className="py-8 text-center space-y-4">
-            <p className="text-muted-foreground">
+        <div className="bg-white rounded-2xl shadow-sm border">
+          <div className="py-8 text-center space-y-4">
+            <p className="text-gray-500">
               Nenhum fechamento gerado para este mês
             </p>
             {isEmployer && (
-              <Button onClick={handleGenerate} disabled={isGenerating}>
+              <Button className="bg-blue-700 hover:bg-blue-800 h-12 text-base font-semibold" onClick={handleGenerate} disabled={isGenerating}>
                 {isGenerating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -287,8 +280,8 @@ export default function FechamentoPage() {
                 Gerar fechamento
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <>
           {/* Status badge */}
@@ -313,54 +306,54 @@ export default function FechamentoPage() {
 
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-3">
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <Clock className="mx-auto h-5 w-5 text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="pt-4 pb-3 text-center">
+                <Clock className="mx-auto h-5 w-5 text-gray-500 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">
                   {closing.total_hours?.toFixed(1) ?? "—"}h
                 </p>
-                <p className="text-xs text-muted-foreground">Total trabalhado</p>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">Total trabalhado</p>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <Timer className="mx-auto h-5 w-5 text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="pt-4 pb-3 text-center">
+                <Timer className="mx-auto h-5 w-5 text-gray-500 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">
                   {closing.overtime_hours?.toFixed(1) ?? "0"}h
                 </p>
-                <p className="text-xs text-muted-foreground">Horas extras</p>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">Horas extras</p>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <AlertTriangle className="mx-auto h-5 w-5 text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="pt-4 pb-3 text-center">
+                <AlertTriangle className="mx-auto h-5 w-5 text-gray-500 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">
                   {closing.delay_minutes ?? 0}min
                 </p>
-                <p className="text-xs text-muted-foreground">Atrasos</p>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">Atrasos</p>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-4 pb-3 text-center">
-                <CalendarOff className="mx-auto h-5 w-5 text-muted-foreground mb-1" />
-                <p className="text-2xl font-bold">
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="pt-4 pb-3 text-center">
+                <CalendarOff className="mx-auto h-5 w-5 text-gray-500 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">
                   {closing.absence_days ?? 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Faltas</p>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">Faltas</p>
+              </div>
+            </div>
           </div>
 
           {/* Notes */}
           {closing.notes && (
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-sm text-muted-foreground">{closing.notes}</p>
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="p-4">
+                <p className="text-sm text-gray-500">{closing.notes}</p>
+              </div>
+            </div>
           )}
 
           {/* Actions */}
@@ -369,7 +362,7 @@ export default function FechamentoPage() {
             {isEmployer && !closing.employee_accepted && (
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full h-11"
                 onClick={handleGenerate}
                 disabled={isGenerating}
               >
@@ -384,17 +377,17 @@ export default function FechamentoPage() {
 
             {/* Employee: accept */}
             {isEmployee && !closing.employee_accepted && (
-              <Card className="border-primary">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Aceite do fechamento</CardTitle>
-                  <CardDescription className="text-xs">
+              <div className="bg-white rounded-2xl shadow-sm border border-blue-700">
+                <div className="px-4 pt-4 pb-2">
+                  <h2 className="text-base font-semibold text-gray-900">Aceite do fechamento</h2>
+                  <p className="text-sm text-gray-500 mt-1">
                     Ao aceitar, você confirma que os horários correspondem à sua
                     jornada neste mês.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+                  </p>
+                </div>
+                <div className="px-4 pb-4">
                   <Button
-                    className="w-full"
+                    className="w-full bg-blue-700 hover:bg-blue-800 h-12 text-base font-semibold"
                     onClick={handleAccept}
                     disabled={isAccepting}
                   >
@@ -405,14 +398,14 @@ export default function FechamentoPage() {
                     )}
                     Confirmo que os horários estão corretos
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {/* Export PDF */}
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full h-11"
               onClick={handleDownloadPdf}
               disabled={isDownloadingPdf}
             >
@@ -428,7 +421,7 @@ export default function FechamentoPage() {
             {isEmployer && closing.employee_accepted && (
               <Button
                 variant="outline"
-                className="w-full text-amber-700"
+                className="w-full h-11 text-amber-700"
                 onClick={() => setShowReopenDialog(true)}
               >
                 <Unlock className="mr-2 h-4 w-4" />

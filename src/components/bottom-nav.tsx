@@ -39,7 +39,7 @@ export function BottomNav() {
         ];
 
   return (
-    <nav className="sticky bottom-0 z-50 border-t bg-background safe-area-inset-bottom">
+    <nav className="sticky bottom-0 z-50 border-t border-gray-200 bg-white safe-area-inset-bottom">
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -49,8 +49,8 @@ export function BottomNav() {
               href={item.href}
               className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs ${
                 isActive
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-blue-700 font-medium"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {item.icon}

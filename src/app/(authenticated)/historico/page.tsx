@@ -3,12 +3,6 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import {
   ChevronLeft,
@@ -172,13 +166,13 @@ function HistoricoContent() {
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
       {/* Month selector */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-semibold capitalize">
+        <h1 className="text-xl font-bold text-gray-900 capitalize">
           {formatMonthLabel(currentMonth)}
         </h1>
         <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)}>
@@ -190,7 +184,7 @@ function HistoricoContent() {
       {isEmployer && employees.length > 0 && (
         <div className="flex gap-2">
           <select
-            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+            className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm h-12 text-base"
             value={selectedEmployeeId || ""}
             onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
           >
@@ -205,6 +199,7 @@ function HistoricoContent() {
             <Button
               size="sm"
               variant="outline"
+              className="h-11"
               onClick={() => {
                 setManualDate(undefined);
                 setShowManualDialog(true);
@@ -220,31 +215,31 @@ function HistoricoContent() {
       {isLoading ? (
         <HistoryTableSkeleton />
       ) : isEmployer && !selectedEmployeeId ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
+        <p className="py-12 text-center text-sm text-gray-500">
           {employees.length === 0
             ? "Nenhum funcionário vinculado ainda."
             : "Selecione um funcionário para ver o histórico."}
         </p>
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
+        <p className="py-12 text-center text-sm text-gray-500">
           Nenhum registro neste mês
         </p>
       ) : (
         <>
           {/* Desktop table */}
           <div className="hidden sm:block">
-            <Card>
-              <CardContent className="p-0">
+            <div className="bg-white rounded-2xl shadow-sm border">
+              <div className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="px-3 py-2 text-left font-medium">Data</th>
-                        <th className="px-3 py-2 text-center font-medium">Entrada</th>
-                        <th className="px-3 py-2 text-center font-medium">Almoço</th>
-                        <th className="px-3 py-2 text-center font-medium">Retorno</th>
-                        <th className="px-3 py-2 text-center font-medium">Saída</th>
-                        <th className="px-3 py-2 text-right font-medium">Total</th>
+                      <tr className="border-b bg-gray-50/80">
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">Data</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">Entrada</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">Almoço</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">Retorno</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">Saída</th>
+                        <th className="px-3 py-2 text-right font-medium text-gray-700">Total</th>
                         {canEdit && <th className="px-1 py-2 w-8" />}
                       </tr>
                     </thead>
@@ -263,8 +258,8 @@ function HistoricoContent() {
                     </tbody>
                   </table>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Mobile cards */}
@@ -274,14 +269,14 @@ function HistoricoContent() {
               if (!hasEntries && row.isWeekend) return null;
 
               return (
-                <Card
+                <div
                   key={row.date}
-                  className={`${row.isWeekend ? "opacity-60" : ""} ${
+                  className={`bg-white rounded-2xl shadow-sm border ${row.isWeekend ? "opacity-60" : ""} ${
                     row.isIncomplete ? "border-amber-300" : ""
                   }`}
                 >
-                  <CardHeader className="pb-1 pt-3 px-4">
-                    <CardTitle className="text-xs font-mono text-muted-foreground flex items-center">
+                  <div className="pb-1 pt-3 px-4">
+                    <div className="text-xs font-mono text-gray-500 flex items-center">
                       {hasEntries ? (
                         <button
                           type="button"
@@ -294,13 +289,13 @@ function HistoricoContent() {
                         <span>{row.dayLabel}</span>
                       )}
                       {row.totalHours && (
-                        <span className="ml-auto font-semibold text-foreground">
+                        <span className="ml-auto font-semibold text-gray-900">
                           {row.totalHours}
                         </span>
                       )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-3 pt-0">
+                    </div>
+                  </div>
+                  <div className="px-4 pb-3 pt-0">
                     <div className="grid grid-cols-4 gap-1 text-center text-xs">
                       {(["entrada", "saida_almoco", "volta_almoco", "saida"] as const).map(
                         (type) => {
@@ -314,11 +309,11 @@ function HistoricoContent() {
                           return (
                             <div
                               key={type}
-                              className={canEdit ? "cursor-pointer hover:bg-muted/50 rounded p-1" : "p-1"}
+                              className={canEdit ? "cursor-pointer hover:bg-gray-50 rounded p-1" : "p-1"}
                               onClick={() => canEdit && handleCellClick(ref, type, row.date)}
                             >
-                              <p className="text-muted-foreground">{labels[type]}</p>
-                              <p className="font-mono font-medium">{ref?.time || "—"}</p>
+                              <p className="text-gray-500">{labels[type]}</p>
+                              <p className="font-mono font-medium text-gray-900">{ref?.time || "—"}</p>
                             </div>
                           );
                         }
@@ -336,8 +331,8 @@ function HistoricoContent() {
                         </div>
                       );
                     })}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>

@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   UserPlus,
@@ -149,32 +143,32 @@ export default function FuncionariosPage() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
-        <h1 className="text-xl font-bold">Funcionários</h1>
+      <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
+        <h1 className="text-xl font-bold text-gray-900">Funcionários</h1>
         <ListSkeleton count={3} />
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
-      <h1 className="text-xl font-bold">Funcionários</h1>
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
+      <h1 className="text-xl font-bold text-gray-900">Funcionários</h1>
 
       {/* Connection Requests */}
       {requests.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Solicitações pendentes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="bg-white rounded-2xl shadow-sm border">
+          <div className="px-4 pt-4 pb-3">
+            <h2 className="text-base font-semibold text-gray-900">Solicitações pendentes</h2>
+          </div>
+          <div className="px-4 pb-4 space-y-3">
             {requests.map((req) => (
               <div
                 key={req.id}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
                 <div>
-                  <p className="font-medium">{req.employee_name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-gray-900">{req.employee_name}</p>
+                  <p className="text-sm text-gray-500">
                     {req.employee_phone}
                   </p>
                   {req.message && (
@@ -185,6 +179,7 @@ export default function FuncionariosPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    className="h-11"
                     onClick={() => handleRequest(req.id, "accepted")}
                   >
                     <CheckCircle className="h-4 w-4" />
@@ -192,6 +187,7 @@ export default function FuncionariosPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    className="h-11"
                     onClick={() => handleRequest(req.id, "rejected")}
                   >
                     <XCircle className="h-4 w-4" />
@@ -199,27 +195,27 @@ export default function FuncionariosPage() {
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Employees List */}
-      <Card>
-        <CardHeader className="pb-3">
+      <div className="bg-white rounded-2xl shadow-sm border">
+        <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Users className="h-4 w-4" />
               Meus funcionários
-            </CardTitle>
-            <Button size="sm" onClick={createInvite} disabled={isCreatingInvite}>
+            </h2>
+            <Button size="sm" className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createInvite} disabled={isCreatingInvite}>
               <UserPlus className="mr-1 h-4 w-4" />
               Convidar
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="px-4 pb-4">
           {employees.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
+            <p className="py-4 text-center text-sm text-gray-500">
               Nenhum funcionário vinculado. Convide alguém!
             </p>
           ) : (
@@ -227,15 +223,15 @@ export default function FuncionariosPage() {
               {employees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-50"
                 >
                   <button
                     type="button"
                     className="flex-1 text-left min-w-0"
                     onClick={() => router.push(`/historico?employee_id=${emp.id}`)}
                   >
-                    <p className="font-medium truncate">{emp.name || "Sem nome"}</p>
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="font-medium truncate text-gray-900">{emp.name || "Sem nome"}</p>
+                    <p className="text-sm text-gray-500 truncate">
                       {emp.phone || emp.email || "—"}
                     </p>
                   </button>
@@ -268,25 +264,25 @@ export default function FuncionariosPage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Pending Invites */}
       {invites.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+        <div className="bg-white rounded-2xl shadow-sm border">
+          <div className="px-4 pt-4 pb-3">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Convites pendentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+            </h2>
+          </div>
+          <div className="px-4 pb-4 space-y-2">
             {invites.map((inv) => (
               <div
                 key={inv.id}
                 className="flex items-center justify-between rounded-lg border p-3"
               >
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-gray-500">
                   Criado em{" "}
                   {new Date(inv.created_at).toLocaleDateString("pt-BR")}
                 </div>
@@ -316,8 +312,8 @@ export default function FuncionariosPage() {
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Work schedule dialog */}
