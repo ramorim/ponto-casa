@@ -45,27 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate and save OTP (same flow for email and WhatsApp)
+    // Generate OTP
     const code = generateOtpCode();
     const codeHash = hashOtpCode(code);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-    const { error: insertError } = await admin.from("otp_codes").insert({
-      phone_or_email: phoneOrEmail,
-      code_hash: codeHash,
-      type,
-      expires_at: expiresAt,
-    });
-
-    if (insertError) {
-      console.error("Error saving OTP:", insertError);
-      return NextResponse.json(
-        { error: "Erro ao gerar código" },
-        { status: 500 }
-      );
-    }
-
-    // Send OTP via the appropriate channel
+    // Send FIRST, save AFTER — so failed sends don't count toward rate limit
     if (type === "whatsapp") {
       try {
         await sendWhatsAppOtp(phoneOrEmail, code);
@@ -82,10 +67,26 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error("Resend send error:", err);
         return NextResponse.json(
-          { error: "Erro ao enviar email. Tente novamente." },
+          { error: `Erro ao enviar email. ${err instanceof Error ? err.message : "Tente novamente."}` },
           { status: 502 }
         );
       }
+    }
+
+    // Only save after successful send
+    const { error: insertError } = await admin.from("otp_codes").insert({
+      phone_or_email: phoneOrEmail,
+      code_hash: codeHash,
+      type,
+      expires_at: expiresAt,
+    });
+
+    if (insertError) {
+      console.error("Error saving OTP:", insertError);
+      return NextResponse.json(
+        { error: "Erro ao gerar código" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ message: "Código enviado", expiresAt });
