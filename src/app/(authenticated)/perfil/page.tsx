@@ -86,7 +86,7 @@ export default function PerfilPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
       <h1 className="text-xl font-bold text-gray-900">Meu perfil</h1>
 
       <div className="bg-white rounded-2xl shadow-sm border">

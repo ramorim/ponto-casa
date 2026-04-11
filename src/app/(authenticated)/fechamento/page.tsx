@@ -230,7 +230,7 @@ export default function FechamentoPage() {
   const monthLabel = formatMonthLabel(currentMonth);
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
       {/* Month selector */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>

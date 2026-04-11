@@ -262,7 +262,7 @@ export default function PontoPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full bg-gray-50 min-h-full">
+    <main className="flex flex-1 flex-col p-4 gap-4 max-w-lg mx-auto w-full">
       {/* Header with time */}
       <div className="text-center space-y-1">
         <p className="text-sm text-gray-500">

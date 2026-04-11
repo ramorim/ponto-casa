@@ -45,7 +45,7 @@ export default function AuthenticatedLayout({
 
   return (
     <>
-      <div className="flex flex-1 flex-col pb-16">{children}</div>
+      <div className="flex flex-1 flex-col pb-16 bg-gray-50">{children}</div>
       <BottomNav />
     </>
   );
