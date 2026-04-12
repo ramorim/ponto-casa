@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- House shape -->
+  <path d="M60 12L10 52h14v48h72V52h14L60 12z" fill="#1e40af" />
+  <!-- Clock circle -->
+  <circle cx="60" cy="68" r="24" fill="white" />
+  <!-- Clock hands -->
+  <line x1="60" y1="68" x2="60" y2="52" stroke="#1e40af" stroke-width="3" stroke-linecap="round" />
+  <line x1="60" y1="68" x2="72" y2="68" stroke="#1e40af" stroke-width="3" stroke-linecap="round" />
+  <!-- Clock center dot -->
+  <circle cx="60" cy="68" r="2.5" fill="#1e40af" />
+  <!-- Clock ticks -->
+  <line x1="60" y1="47" x2="60" y2="50" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="60" y1="86" x2="60" y2="89" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="39" y1="68" x2="42" y2="68" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="78" y1="68" x2="81" y2="68" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" />
+</svg>
