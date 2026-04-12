@@ -39,7 +39,7 @@ export function BottomNav() {
         ];
 
   return (
-    <nav className="sticky bottom-0 z-50 border-t border-gray-200 bg-white safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

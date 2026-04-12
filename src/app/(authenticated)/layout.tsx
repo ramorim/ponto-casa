@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -45,7 +46,14 @@ export default function AuthenticatedLayout({
 
   return (
     <>
-      <div className="flex flex-1 flex-col pb-16 bg-gray-50">{children}</div>
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-lg items-center gap-2.5 px-4 py-2.5">
+          <Image src="/icons/logo.svg" alt="" width={28} height={28} />
+          <span className="text-sm font-bold text-gray-900">Ponto Casa</span>
+        </div>
+      </header>
+      <div className="flex flex-1 flex-col pb-20 bg-gray-50">{children}</div>
       <BottomNav />
     </>
   );
