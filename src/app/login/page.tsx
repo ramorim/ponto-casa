@@ -6,8 +6,9 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageCircle, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { MessageCircle, Mail, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 
 type AuthType = "whatsapp" | "email";
 
@@ -60,6 +61,16 @@ export default function LoginPage() {
               Controle de jornada doméstica
             </p>
           </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="flex gap-3 items-start bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <ShieldCheck className="h-5 w-5 text-blue-700 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-900 leading-relaxed">
+            <strong>Sem senha.</strong> Escolha receber um código de acesso
+            por <strong>WhatsApp</strong> ou <strong>email</strong>. O código
+            é enviado na hora e expira em 5 minutos.
+          </p>
         </div>
 
         {/* Login card */}
@@ -166,9 +177,16 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400">
-          Ao continuar, você concorda com os termos de uso
-          e política de privacidade.
+        <p className="text-center text-xs text-gray-400 leading-relaxed">
+          Ao continuar, você concorda com os{" "}
+          <Link href="/termos" className="underline hover:text-gray-600">
+            Termos de Uso
+          </Link>{" "}
+          e a{" "}
+          <Link href="/privacidade" className="underline hover:text-gray-600">
+            Política de Privacidade
+          </Link>
+          .
         </p>
       </div>
     </main>
