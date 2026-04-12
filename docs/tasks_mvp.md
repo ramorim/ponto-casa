@@ -199,6 +199,44 @@
 
 ---
 
+## Fase 8.5 — Varredura de Segurança e Checagem LGPD
+
+> **Objetivo:** antes de avançar para o app mobile (Fase 9), garantir que a aplicação web em produção está segura e em conformidade com a LGPD. Essa fase funciona como um "gate" de qualidade — nada vai pra store sem passar por aqui.
+
+### Segurança
+
+- [ ] 8.5.1 Auditoria de dependências: `npm audit`, corrigir vulnerabilidades altas/críticas
+- [ ] 8.5.2 Verificar que nenhuma env var sensível vaza no bundle client (build + inspecionar source map / network)
+- [ ] 8.5.3 Validar que todas as API routes usam `requireAuth()` ou `requireEmployer()` — nenhuma rota desprotegida
+- [ ] 8.5.4 Testar RLS: tentar acessar dados de outro usuário via Supabase REST direto (deve ser bloqueado)
+- [ ] 8.5.5 Verificar headers de segurança (CSP, X-Frame-Options, HSTS) — configurar via `next.config.ts` ou Vercel
+- [ ] 8.5.6 Rate limiting: testar brute-force no OTP (envio e verificação) — confirmar que bloqueia após limites
+- [ ] 8.5.7 Validar que cookies de sessão são HttpOnly, Secure, SameSite=Lax em produção
+- [ ] 8.5.8 Verificar que `SUPABASE_SERVICE_ROLE_KEY` não é acessível via client (grep no build output)
+- [ ] 8.5.9 Testar XSS: inputs de nome, observação, motivo — garantir sanitização
+- [ ] 8.5.10 Verificar CORS: API routes só aceitam requests do próprio domínio em produção
+- [ ] 8.5.11 Revisar trigger de auditoria: confirmar que alterações manuais são registradas e imutáveis
+- [ ] 8.5.12 Testar fluxo de revogação de convite: convite revogado não pode ser aceito
+
+### LGPD — Conformidade
+
+- [ ] 8.5.13 Verificar Política de Privacidade: todos os dados coletados estão documentados (cadastro, ponto, geo, audit, devices)
+- [ ] 8.5.14 Verificar Termos de Uso: responsabilidades de empregador e funcionário claras
+- [ ] 8.5.15 Consentimento de geolocalização: confirmar que é opt-in (Permissions API), não forçado
+- [ ] 8.5.16 Direito de acesso: funcionário consegue ver todos os seus dados (perfil, histórico, fechamentos)
+- [ ] 8.5.17 Direito de portabilidade: funcionário consegue exportar dados (PDF do espelho de ponto)
+- [ ] 8.5.18 Direito de eliminação: criar endpoint ou processo para solicitar exclusão de conta e dados pessoais (respeitando prazo legal de 5 anos para registros trabalhistas)
+- [ ] 8.5.19 Retenção de dados: documentar política de retenção (otp_codes expiram, registros de ponto mantidos 5 anos)
+- [ ] 8.5.20 Compartilhamento: verificar que dados só são compartilhados entre empregador↔funcionário vinculados (RLS garante)
+- [ ] 8.5.21 Cookies: confirmar que não há cookies de tracking/analytics — apenas sessão (HttpOnly)
+- [ ] 8.5.22 Verificar que emails sintéticos (`@pontocasa.app`) são substituídos por email real no onboarding
+- [ ] 8.5.23 Revisar logs: garantir que logs de servidor não contêm dados pessoais (CPF, coordenadas) em texto claro
+- [ ] 8.5.24 Adicionar link para Política de Privacidade e Termos de Uso no rodapé de todas as telas (não só login)
+
+**Entregável:** Relatório de segurança + checklist LGPD assinado. Nenhuma vulnerabilidade alta/crítica aberta. App pronto para store submission.
+
+---
+
 ## Fase 9 — Aplicativo Mobile Nativo (Capacitor)
 
 > **Estratégia escolhida:** **Capacitor em modo remoto** — o app nativo é uma casca WebView (iOS WKWebView / Android WebView) que aponta para o Next.js já hospedado. Reusa **100%** do código atual, atualizações são instantâneas (deploy = atualização), e plugins nativos do Capacitor (ex: `@capacitor/geolocation`) são acessíveis via JS bridge para casos que precisam de APIs do dispositivo.
@@ -312,9 +350,11 @@ Fase 2.5 (Onboarding + Conexão)
                                    │
                              Fase 7 (PDF)
                                    │
-                             Fase 8 (Polish)
+                             Fase 8 (Polish + Deploy)
                                    │
-                             Fase 9 (Capacitor — opcional após MVP web)
+                             Fase 8.5 (Segurança + LGPD) ← gate obrigatório
+                                   │
+                             Fase 9 (Capacitor — app mobile)
 ```
 
 - Fases 3 e 4 podem ser paralelas após Fase 2.5
@@ -325,4 +365,4 @@ Fase 2.5 (Onboarding + Conexão)
 
 ---
 
-**Total: 110 tasks across 10 phases**
+**Total: 134 tasks across 11 phases**
