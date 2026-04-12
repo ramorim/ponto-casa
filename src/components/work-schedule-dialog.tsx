@@ -94,7 +94,7 @@ export function WorkScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm rounded-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-sm rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-gray-900">Horário de trabalho</DialogTitle>
           <DialogDescription className="text-sm text-gray-500">
