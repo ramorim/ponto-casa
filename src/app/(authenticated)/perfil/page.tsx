@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProfileSkeleton } from "@/components/skeletons";
@@ -190,6 +191,15 @@ export default function PerfilPage() {
         <LogOut className="mr-2 h-4 w-4" />
         Sair da conta
       </Button>
+
+      <div className="text-center text-xs text-gray-400 space-x-3 pb-4">
+        <Link href="/termos" className="underline hover:text-gray-600">
+          Termos de Uso
+        </Link>
+        <Link href="/privacidade" className="underline hover:text-gray-600">
+          Política de Privacidade
+        </Link>
+      </div>
     </main>
   );
 }

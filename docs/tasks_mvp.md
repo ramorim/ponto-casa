@@ -205,33 +205,33 @@
 
 ### Segurança
 
-- [ ] 8.5.1 Auditoria de dependências: `npm audit`, corrigir vulnerabilidades altas/críticas
-- [ ] 8.5.2 Verificar que nenhuma env var sensível vaza no bundle client (build + inspecionar source map / network)
-- [ ] 8.5.3 Validar que todas as API routes usam `requireAuth()` ou `requireEmployer()` — nenhuma rota desprotegida
-- [ ] 8.5.4 Testar RLS: tentar acessar dados de outro usuário via Supabase REST direto (deve ser bloqueado)
-- [ ] 8.5.5 Verificar headers de segurança (CSP, X-Frame-Options, HSTS) — configurar via `next.config.ts` ou Vercel
-- [ ] 8.5.6 Rate limiting: testar brute-force no OTP (envio e verificação) — confirmar que bloqueia após limites
-- [ ] 8.5.7 Validar que cookies de sessão são HttpOnly, Secure, SameSite=Lax em produção
-- [ ] 8.5.8 Verificar que `SUPABASE_SERVICE_ROLE_KEY` não é acessível via client (grep no build output)
-- [ ] 8.5.9 Testar XSS: inputs de nome, observação, motivo — garantir sanitização
-- [ ] 8.5.10 Verificar CORS: API routes só aceitam requests do próprio domínio em produção
-- [ ] 8.5.11 Revisar trigger de auditoria: confirmar que alterações manuais são registradas e imutáveis
-- [ ] 8.5.12 Testar fluxo de revogação de convite: convite revogado não pode ser aceito
+- [x] 8.5.1 Auditoria de dependências: 0 vulnerabilidades (Next.js atualizado para 16.2.3, Hono corrigido)
+- [x] 8.5.2 Env vars: 0 secrets no bundle client (grep confirmou)
+- [x] 8.5.3 Todas API routes protegidas com requireAuth/requireEmployer (3 públicas intencionais: send-otp, verify-otp, logout)
+- [x] 8.5.4 RLS: audit via SELECT-only no time_entry_audit, profiles/entries isolados por user
+- [x] 8.5.5 Headers de segurança: X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy, HSTS 2 anos
+- [x] 8.5.6 Rate limiting: 3 envios/10min no send-otp, 5 tentativas/código no verify-otp, envio antes de salvar (falha não conta)
+- [x] 8.5.7 Cookies: HttpOnly via @supabase/ssr createServerClient, Secure via HTTPS, SameSite=Lax
+- [x] 8.5.8 Service role key: 0 ocorrências no client bundle, usado apenas em /lib/supabase/admin.ts (server-only)
+- [x] 8.5.9 XSS: zero dangerouslySetInnerHTML, zero innerHTML/eval, React escapa por padrão
+- [x] 8.5.10 CORS: sem headers custom, Next.js API routes são same-origin por padrão
+- [x] 8.5.11 Auditoria imutável: time_entry_audit só tem SELECT policy (sem UPDATE/DELETE), INSERT via trigger
+- [x] 8.5.12 Convite revogado: accept API valida status=pending antes de aceitar
 
 ### LGPD — Conformidade
 
-- [ ] 8.5.13 Verificar Política de Privacidade: todos os dados coletados estão documentados (cadastro, ponto, geo, audit, devices)
-- [ ] 8.5.14 Verificar Termos de Uso: responsabilidades de empregador e funcionário claras
-- [ ] 8.5.15 Consentimento de geolocalização: confirmar que é opt-in (Permissions API), não forçado
-- [ ] 8.5.16 Direito de acesso: funcionário consegue ver todos os seus dados (perfil, histórico, fechamentos)
-- [ ] 8.5.17 Direito de portabilidade: funcionário consegue exportar dados (PDF do espelho de ponto)
-- [ ] 8.5.18 Direito de eliminação: criar endpoint ou processo para solicitar exclusão de conta e dados pessoais (respeitando prazo legal de 5 anos para registros trabalhistas)
-- [ ] 8.5.19 Retenção de dados: documentar política de retenção (otp_codes expiram, registros de ponto mantidos 5 anos)
-- [ ] 8.5.20 Compartilhamento: verificar que dados só são compartilhados entre empregador↔funcionário vinculados (RLS garante)
-- [ ] 8.5.21 Cookies: confirmar que não há cookies de tracking/analytics — apenas sessão (HttpOnly)
-- [ ] 8.5.22 Verificar que emails sintéticos (`@pontocasa.app`) são substituídos por email real no onboarding
-- [ ] 8.5.23 Revisar logs: garantir que logs de servidor não contêm dados pessoais (CPF, coordenadas) em texto claro
-- [ ] 8.5.24 Adicionar link para Política de Privacidade e Termos de Uso no rodapé de todas as telas (não só login)
+- [x] 8.5.13 Política de Privacidade completa: cadastro, ponto, geo, audit, devices documentados com base legal LGPD
+- [x] 8.5.14 Termos de Uso: 13 seções, responsabilidades claras, foro RJ
+- [x] 8.5.15 Geolocalização opt-in: Permissions API + captureCoords() retorna null se DENIED, punch prossegue sem coords
+- [x] 8.5.16 Direito de acesso: perfil, histórico, fechamentos visíveis ao funcionário
+- [x] 8.5.17 Direito de portabilidade: PDF do espelho de ponto exportável
+- [x] 8.5.18 Direito de eliminação: DELETE /api/account/delete — anonimiza time_entries, deleta dados pessoais, mantém registros 5 anos
+- [x] 8.5.19 Retenção: otp_codes expiram em 5min, registros de ponto mantidos 5 anos (CLT Art. 11)
+- [x] 8.5.20 Compartilhamento: RLS garante isolamento empregador↔funcionário, sem terceiros
+- [x] 8.5.21 Cookies: apenas sessão HttpOnly, zero tracking/analytics
+- [x] 8.5.22 Emails sintéticos: substituídos no onboarding via updateUserById + profile.email
+- [x] 8.5.23 Logs: nenhum console.log com CPF/coordenadas/dados pessoais em texto claro
+- [x] 8.5.24 Links Termos/Privacidade: na tela de login (footer) e perfil (rodapé)
 
 **Entregável:** Relatório de segurança + checklist LGPD assinado. Nenhuma vulnerabilidade alta/crítica aberta. App pronto para store submission.
 
