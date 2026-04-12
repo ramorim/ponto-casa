@@ -94,10 +94,10 @@ export function WorkScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Horário de trabalho</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg font-bold text-gray-900">Horário de trabalho</DialogTitle>
+          <DialogDescription className="text-sm text-gray-500">
             Definir jornada de {employeeName}
           </DialogDescription>
         </DialogHeader>
@@ -110,19 +110,21 @@ export function WorkScheduleDialog({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="start">Entrada</Label>
+                <Label htmlFor="start" className="text-gray-700">Entrada</Label>
                 <Input
                   id="start"
                   type="time"
+                  className="h-12 text-base"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="end">Saída</Label>
+                <Label htmlFor="end" className="text-gray-700">Saída</Label>
                 <Input
                   id="end"
                   type="time"
+                  className="h-12 text-base"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                 />
@@ -131,28 +133,30 @@ export function WorkScheduleDialog({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="lunch-start">Início almoço</Label>
+                <Label htmlFor="lunch-start" className="text-gray-700">Início almoço</Label>
                 <Input
                   id="lunch-start"
                   type="time"
+                  className="h-12 text-base"
                   value={lunchStart}
                   onChange={(e) => setLunchStart(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lunch-end">Fim almoço</Label>
+                <Label htmlFor="lunch-end" className="text-gray-700">Fim almoço</Label>
                 <Input
                   id="lunch-end"
                   type="time"
+                  className="h-12 text-base"
                   value={lunchEnd}
                   onChange={(e) => setLunchEnd(e.target.value)}
                 />
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               Jornada:{" "}
-              <strong>
+              <strong className="text-gray-900">
                 {calculateWorkHours(startTime, lunchStart, lunchEnd, endTime)}
               </strong>{" "}
               por dia (descontando almoço)
@@ -160,12 +164,12 @@ export function WorkScheduleDialog({
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving || isLoading}>
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <Button className="w-full bg-blue-700 hover:bg-blue-800 h-12 text-base font-semibold" onClick={handleSave} disabled={isSaving || isLoading}>
             {isSaving ? "Salvando..." : "Salvar"}
+          </Button>
+          <Button variant="outline" className="w-full h-11" onClick={onClose} disabled={isSaving}>
+            Cancelar
           </Button>
         </DialogFooter>
       </DialogContent>

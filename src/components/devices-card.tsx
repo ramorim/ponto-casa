@@ -103,15 +103,15 @@ export function DevicesCard() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Dispositivos conectados</CardTitle>
-        <CardDescription>
+    <div className="bg-white rounded-2xl shadow-sm border">
+      <div className="px-4 pt-4 pb-3">
+        <h2 className="text-base font-semibold text-gray-900">Dispositivos conectados</h2>
+        <p className="text-sm text-gray-500 mt-1">
           Aparelhos onde sua conta está logada. Remova qualquer um que você não
           reconhece.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
+        </p>
+      </div>
+      <div className="px-4 pb-4 space-y-2">
         {isLoading ? (
           Array.from({ length: 2 }).map((_, i) => (
             <div
@@ -177,7 +177,7 @@ export function DevicesCard() {
             );
           })
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

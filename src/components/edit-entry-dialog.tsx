@@ -93,34 +93,36 @@ export function EditEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Editar {getEventLabel(entry.event_type)}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg font-bold text-gray-900">Editar {getEventLabel(entry.event_type)}</DialogTitle>
+          <DialogDescription className="text-sm text-gray-500">
             {toSaoPauloDateLabel(entry.timestamp_server)}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Horário atual</Label>
-            <p className="text-sm text-muted-foreground font-mono">{currentTime}</p>
+            <Label className="text-gray-700">Horário atual</Label>
+            <p className="text-sm text-gray-500 font-mono">{currentTime}</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-time">Novo horário</Label>
+            <Label htmlFor="new-time" className="text-gray-700">Novo horário</Label>
             <Input
               id="new-time"
               type="time"
+              className="h-12 text-base"
               value={time}
               onChange={(e) => setTime(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="note">Observação</Label>
+            <Label htmlFor="note" className="text-gray-700">Observação</Label>
             <Input
               id="note"
+              className="h-12 text-base"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={200}
@@ -129,11 +131,12 @@ export function EditEntryDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">
+            <Label htmlFor="reason" className="text-gray-700">
               Motivo da alteração <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="reason"
+              className="text-base"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ex: Funcionário esqueceu de bater ponto"
@@ -142,12 +145,12 @@ export function EditEntryDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <Button className="w-full bg-blue-700 hover:bg-blue-800 h-12 text-base font-semibold" onClick={handleSave} disabled={isLoading}>
             {isLoading ? "Salvando..." : "Salvar"}
+          </Button>
+          <Button variant="outline" className="w-full h-11" onClick={onClose} disabled={isLoading}>
+            Cancelar
           </Button>
         </DialogFooter>
       </DialogContent>
