@@ -193,7 +193,7 @@
 - [x] 8.8 Work schedule: API `GET/POST /api/work-schedules` + `WorkScheduleDialog` (modal entrada/saída/almoço), botão relógio em cada funcionário
 - [x] 8.9 Rate limiting OTP: implementado em send-otp (3/10min) + verify-otp (5 tentativas por código)
 - [x] 8.10 Relógio ao vivo na tela `/ponto` em timezone São Paulo
-- [ ] 8.11 Deploy Vercel: domínio, env vars, connection pooling Supabase (pendente)
+- [x] 8.11 Deploy Vercel: domínio pontocasa.app.br, env vars configuradas, Supabase cloud sa-east-1
 
 **Entregável:** App pronto para produção com UX polido e segurança.
 
