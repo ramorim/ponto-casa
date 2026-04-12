@@ -108,7 +108,7 @@ export function WorkScheduleDialog({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 min-w-0">
               <div className="space-y-2">
                 <Label htmlFor="start" className="text-gray-700">Entrada</Label>
                 <Input
@@ -131,7 +131,7 @@ export function WorkScheduleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 min-w-0">
               <div className="space-y-2">
                 <Label htmlFor="lunch-start" className="text-gray-700">Início almoço</Label>
                 <Input

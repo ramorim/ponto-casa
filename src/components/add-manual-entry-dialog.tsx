@@ -101,7 +101,7 @@ export function AddManualEntryDialog({
                   key={et}
                   variant={eventType === et ? "default" : "outline"}
                   size="sm"
-                  className={eventType === et ? "bg-blue-700 hover:bg-blue-800" : "h-10"}
+                  className={`h-10 text-sm ${eventType === et ? "bg-blue-700 hover:bg-blue-800" : ""}`}
                   onClick={() => setEventType(et)}
                   type="button"
                 >
@@ -111,27 +111,26 @@ export function AddManualEntryDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="manual-date" className="text-gray-700">Data</Label>
-              <Input
-                id="manual-date"
-                type="date"
-                className="h-12 text-base"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-time" className="text-gray-700">Horário</Label>
-              <Input
-                id="manual-time"
-                type="time"
-                className="h-12 text-base"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="manual-date" className="text-gray-700">Data</Label>
+            <Input
+              id="manual-date"
+              type="date"
+              className="h-12 text-base w-full"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="manual-time" className="text-gray-700">Horário</Label>
+            <Input
+              id="manual-time"
+              type="time"
+              className="h-12 text-base w-full"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
