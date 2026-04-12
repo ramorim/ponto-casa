@@ -84,7 +84,7 @@ export function AddManualEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm rounded-2xl">
+      <DialogContent className="max-w-sm rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-gray-900">Registro manual</DialogTitle>
           <DialogDescription className="text-sm text-gray-500">
@@ -111,33 +111,34 @@ export function AddManualEntryDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="manual-date" className="text-gray-700">Data</Label>
-            <Input
-              id="manual-date"
-              type="date"
-              className="h-12 text-base w-full"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="manual-date" className="text-gray-700 text-xs">Data</Label>
+              <Input
+                id="manual-date"
+                type="date"
+                className="h-10 text-sm"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-time" className="text-gray-700 text-xs">Horário</Label>
+              <Input
+                id="manual-time"
+                type="time"
+                className="h-10 text-sm"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="manual-time" className="text-gray-700">Horário</Label>
-            <Input
-              id="manual-time"
-              type="time"
-              className="h-12 text-base w-full"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="manual-note" className="text-gray-700">Observação</Label>
+          <div className="space-y-1">
+            <Label htmlFor="manual-note" className="text-gray-700 text-xs">Observação</Label>
             <Input
               id="manual-note"
-              className="h-12 text-base"
+              className="h-10 text-sm"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={200}
@@ -145,13 +146,13 @@ export function AddManualEntryDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="manual-reason" className="text-gray-700">
+          <div className="space-y-1">
+            <Label htmlFor="manual-reason" className="text-gray-700 text-xs">
               Motivo <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="manual-reason"
-              className="text-base"
+              className="text-sm"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ex: Funcionário(a) esqueceu de bater ponto"
