@@ -13,6 +13,7 @@ import {
   History,
 } from "lucide-react";
 import type { EventType } from "@/lib/time-entry-validation";
+import { getHolidays } from "@/lib/holidays";
 import { EditEntryDialog } from "@/components/edit-entry-dialog";
 import { AddManualEntryDialog } from "@/components/add-manual-entry-dialog";
 import { AuditLog } from "@/components/audit-log";
@@ -50,6 +51,7 @@ interface DayRow {
   saida: EntryRef | null;
   totalHours: string | null;
   isIncomplete: boolean;
+  holiday: string | null;
 }
 
 interface EmployeeOption {
@@ -272,8 +274,8 @@ function HistoricoContent() {
                 <div
                   key={row.date}
                   className={`bg-white rounded-2xl shadow-sm border ${row.isWeekend ? "opacity-60" : ""} ${
-                    row.isIncomplete ? "border-amber-300" : ""
-                  }`}
+                    row.holiday && !row.isWeekend ? "border-orange-300 bg-orange-50/40" : ""
+                  } ${row.isIncomplete ? "border-amber-300" : ""}`}
                 >
                   <div className="pb-1 pt-3 px-4">
                     <div className="text-xs font-mono text-gray-500 flex items-center">
@@ -294,6 +296,9 @@ function HistoricoContent() {
                         </span>
                       )}
                     </div>
+                    {row.holiday && (
+                      <p className="text-[10px] text-orange-600 mt-0.5">{row.holiday}</p>
+                    )}
                   </div>
                   <div className="px-4 pb-3 pt-0">
                     <div className="grid grid-cols-4 gap-1 text-center text-xs">
@@ -420,20 +425,28 @@ function TableRow({
       <tr
         className={`border-b ${
           row.isWeekend ? "bg-muted/30 text-muted-foreground" : ""
-        } ${row.isIncomplete ? "bg-amber-50" : ""}`}
+        } ${row.holiday && !row.isWeekend ? "bg-orange-50/60 text-orange-900/80" : ""} ${row.isIncomplete ? "bg-amber-50" : ""}`}
       >
         <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
-          {hasAnyEntry ? (
-            <button
-              type="button"
-              className="text-primary underline-offset-2 hover:underline"
-              onClick={() => onShowDetail(row.date)}
-            >
-              {row.dayLabel}
-            </button>
-          ) : (
-            row.dayLabel
-          )}
+          <span className="inline-flex items-center gap-1">
+            {row.holiday && (
+              <span
+                className="inline-block w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"
+                title={row.holiday}
+              />
+            )}
+            {hasAnyEntry ? (
+              <button
+                type="button"
+                className="text-primary underline-offset-2 hover:underline"
+                onClick={() => onShowDetail(row.date)}
+              >
+                {row.dayLabel}
+              </button>
+            ) : (
+              row.dayLabel
+            )}
+          </span>
         </td>
         {types.map((type) => {
           const ref = row[type];
@@ -506,6 +519,9 @@ function buildDayRows(month: string, entries: TimeEntry[]): DayRow[] {
     });
   }
 
+  // Pré-carregar feriados do ano (e do ano anterior/próximo para meses de fronteira)
+  const holidays = getHolidays(year);
+
   const rows: DayRow[] = [];
   const weekdays = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
@@ -529,6 +545,8 @@ function buildDayRows(month: string, entries: TimeEntry[]): DayRow[] {
       totalHours = calculateDayTotal(entrada.time, saida_almoco?.time ?? null, volta_almoco?.time ?? null, saida.time);
     }
 
+    const holiday = holidays.get(dateStr) ?? null;
+
     rows.push({
       date: dateStr,
       dayLabel: `${String(day).padStart(2, "0")}/${String(monthNum).padStart(2, "0")} ${weekdays[dayOfWeek]}`,
@@ -539,6 +557,7 @@ function buildDayRows(month: string, entries: TimeEntry[]): DayRow[] {
       saida,
       totalHours,
       isIncomplete,
+      holiday,
     });
   }
 
